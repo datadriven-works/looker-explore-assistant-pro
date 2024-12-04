@@ -87,7 +87,7 @@ export default function Fallback({ error}: {error: any}) {
                   <h3>Error Name:</h3><MarkdownText text={errorMessage ? error.name : ''} />
                 </div>
                 <div className="errorSection">
-                  <h3>Error Message:</h3><p className="messageContainer"><MarkdownText text={errorMessage ? error.message : ''} /></p>
+                  <h3>Error Message:</h3><div className="messageContainer"><MarkdownText text={errorMessage ? error.message : ''} /></div>
                 </div>
                 <div className="errorSection">
                   <h3>Diagnosis:</h3>

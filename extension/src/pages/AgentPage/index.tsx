@@ -23,7 +23,7 @@ import {
 } from '../../slices/assistantSlice'
 import MessageThread from './MessageThread'
 import clsx from 'clsx'
-import { Close } from '@mui/icons-material'
+import CloseIcon from '@mui/icons-material/Close'
 import {
   FormControl,
   InputLabel,
@@ -226,7 +226,7 @@ const AgentPage = () => {
 
   const isAgentReady = isBigQueryMetadataLoaded && isSemanticModelLoaded
 
-  if (!isAgentReady || true) {
+  if (!isAgentReady) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="flex flex-col space-y-4 mx-auto max-w-2xl p-4">
@@ -344,7 +344,7 @@ const AgentPage = () => {
                         onClick={() => dispatch(closeSidePanel())}
                         className="text-white hover:text-gray-300"
                       >
-                        <Close />
+                        <CloseIcon />
                       </button>
                     </Tooltip>
                   </div>

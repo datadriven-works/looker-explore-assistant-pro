@@ -11,7 +11,7 @@ import { ExploreHelper } from '../../utils/ExploreHelper'
 import {
   openSidePanel,
 } from '../../slices/assistantSlice'
-import { OpenInNew } from '@mui/icons-material'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 interface ExploreMessageProps {
   exploreId: string
@@ -52,7 +52,7 @@ const ExploreMessage = ({ modelName, exploreId, prompt, exploreParams }: Explore
             className="cursor-pointer hover:underline text-sm text-blue-500 flex flex-col justify-center items-end"
             onClick={openExplore}
           >
-            <div>visit <OpenInNew fontSize={'small'} /></div>
+            <div>visit <OpenInNewIcon fontSize={'small'} /></div>
           </div>
         </div>
       </Message>

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '../../store'
 import { setIsChatMode, setQuery } from '../../slices/assistantSlice'
 import clsx from 'clsx'
-import { Send } from '@mui/icons-material'
+import SendIcon from '@mui/icons-material/Send'
 
 const PromptInput = () => {
   const dispatch = useDispatch()
@@ -62,7 +62,7 @@ const PromptInput = () => {
             {isQuerying ? (
               <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
             ) : (
-              <Send />
+              <SendIcon />
             )}
           </button>
         </div>
