@@ -42,15 +42,6 @@ export default function Fallback({ error}: {error: any}) {
           "If you are using the cloud backend, please remove VERTEX_BIGQUERY_MODEL_ID and VERTEX_BIGQUERY_EXPLORE_ID and try again."
         ]
       },
-      bigQueryModelErr: {
-        diagnosis: "The error is likely related to your BQ database and BQ `.env` variable for model.",
-        steps: [
-          "Please read the error message from BigQuery, the `SQLException` error will give you the reason.",
-          "Ensure that your BQ service account used for the `VERTEX_BIGQUERY_LOOKER_CONNECTION_NAME` env variable has [BigQuery Connections User](https://cloud.google.com/bigquery/docs/access-control#bigquery.connectionUser) permission to the remote connection provisioned by Terraform",
-          "Ensure the BQML model in the error message matches what exists in BQ.",
-          "Ensure the BQML model is fully scoped ie. `project.dataset.table`"
-        ]
-      }
     }
 
     useEffect(() => {

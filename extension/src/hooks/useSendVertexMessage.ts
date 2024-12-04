@@ -56,11 +56,6 @@ const useSendVertexMessage = () => {
   const VERTEX_AI_ENDPOINT = process.env.VERTEX_AI_ENDPOINT || ''
   const VERTEX_CF_AUTH_TOKEN = process.env.VERTEX_CF_AUTH_TOKEN || ''
 
-  // bigquery
-  const VERTEX_BIGQUERY_LOOKER_CONNECTION_NAME =
-    process.env.VERTEX_BIGQUERY_LOOKER_CONNECTION_NAME || ''
-  const VERTEX_BIGQUERY_MODEL_ID = process.env.VERTEX_BIGQUERY_MODEL_ID || ''
-
   const { core40SDK } = useContext(ExtensionContext)
   const { settings, examples, currentExplore } = useSelector(
     (state: RootState) => state.assistant as AssistantState,
@@ -70,56 +65,33 @@ const useSendVertexMessage = () => {
   const exploreRefinementExamples =
     examples.exploreRefinementExamples[currentExploreKey]
 
-  const vertexBigQuery = async (
-    contents: string,
-    parameters: ModelParameters,
-  ) => {
-    const createSQLQuery = await core40SDK.ok(
-      core40SDK.create_sql_query({
-        connection_name: VERTEX_BIGQUERY_LOOKER_CONNECTION_NAME,
-        sql: BigQueryHelper.generateSQL(
-          VERTEX_BIGQUERY_MODEL_ID,
-          contents,
-          parameters,
-        ),
-      }),
-    )
-
-    if (createSQLQuery.slug) {
-      const runSQLQuery: any = await core40SDK.ok(
-        core40SDK.run_sql_query(createSQLQuery.slug, 'json'),
-      )
-      const exploreData = await runSQLQuery[0]['generated_content']
-
-      // clean up the data by removing backticks
-      const cleanExploreData = exploreData
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim()
-
-      return cleanExploreData
-    }
-  }
-
   const vertexCloudFunction = async (
     contents: string,
     parameters: ModelParameters,
+    responseSchema: any,
   ) => {
-    const body = JSON.stringify({
+    const body = {
       contents: contents,
       parameters: parameters,
-    })
+      response_schema: null 
+    }
 
-    const signature = CryptoJS.HmacSHA256(body, VERTEX_CF_AUTH_TOKEN).toString()
+    if (responseSchema) {
+      body['response_schema'] = responseSchema
+    }
 
-    const responseData = await fetch(VERTEX_AI_ENDPOINT, {
+    const jsonBody = JSON.stringify(body)
+
+    const signature = CryptoJS.HmacSHA256(jsonBody, VERTEX_CF_AUTH_TOKEN).toString()
+    const path = VERTEX_AI_ENDPOINT + '/generate_content'
+    const responseData = await fetch(path, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Signature': signature,
       },
 
-      body: body,
+      body: jsonBody,
     })
     const response = await responseData.text()
     return response.trim()
@@ -199,7 +171,11 @@ ${
       Return "data summary" if the user is asking for a data summary, and "refining question" if the user is continuing to refine their question. Only output one answer, no more. Only return one those two options. If you're not sure, return "refining question".
 
     `
-    const response = await sendMessage(contents, {})
+    const responseSchema = {
+      type: 'string',
+      enum: ['data summary', 'refining question'],
+    }
+    const response = await sendMessage(contents, {}, responseSchema)
     return response === 'data summary'
   }
 
@@ -562,31 +538,10 @@ ${
     [settings],
   )
 
-  const sendMessage = async (message: string, parameters: ModelParameters) => {
+  const sendMessage = async (message: string, parameters: ModelParameters, responseSchema: any) => {
     const wrappedMessage = promptWrapper(message)
     try {
-      if (
-        VERTEX_AI_ENDPOINT &&
-        VERTEX_BIGQUERY_LOOKER_CONNECTION_NAME &&
-        VERTEX_BIGQUERY_MODEL_ID
-      ) {
-        throw new Error(
-          'Both Vertex AI and BigQuery are enabled. Please only enable one',
-        )
-      }
-
-      let response = ''
-      if (VERTEX_AI_ENDPOINT) {
-        response = await vertexCloudFunction(wrappedMessage, parameters)
-      } else if (
-        VERTEX_BIGQUERY_LOOKER_CONNECTION_NAME &&
-        VERTEX_BIGQUERY_MODEL_ID
-      ) {
-        response = await vertexBigQuery(wrappedMessage, parameters)
-      } else {
-        throw new Error('No Vertex AI or BigQuery connection found')
-      }
-
+      let response = await vertexCloudFunction(wrappedMessage, parameters, responseSchema)
       if (response.startsWith('```json') && response.endsWith('```')) {
         response = response.slice(7, -3).trim()
       }
@@ -596,8 +551,6 @@ ${
       showBoundary(error)
       return
     }
-
-    return ''
   }
 
   return {
