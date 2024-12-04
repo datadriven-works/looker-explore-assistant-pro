@@ -228,7 +228,7 @@ const AgentPage = () => {
 
   if (!isAgentReady) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen w-full">
         <div className="flex flex-col space-y-4 mx-auto max-w-2xl p-4">
           <h1 className="text-5xl font-bold">
             <span className="bg-clip-text text-transparent  bg-gradient-to-r from-pink-500 to-violet-500">
@@ -247,7 +247,7 @@ const AgentPage = () => {
   }
 
   return (
-    <div className="relative page-container flex h-screen">
+    <div className="relative page-container flex h-screen w-full">
       <Sidebar expanded={expanded} toggleDrawer={toggleDrawer} />
 
       <main

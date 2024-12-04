@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const Dotenv = require('dotenv-webpack');
 
 const BundleAnalyzerPlugin = require("webpack-bundle-analyzer")
   .BundleAnalyzerPlugin;
@@ -75,6 +76,7 @@ module.exports = {
     new BundleAnalyzerPlugin({
       analyzerMode: process.env.ANALYZE_MODE || "disabled",
     }),
+    new Dotenv()
   ],
 };
 

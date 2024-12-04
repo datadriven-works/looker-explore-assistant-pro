@@ -38,13 +38,13 @@ const render = (Component: typeof App) => {
             requiredLookerVersion=">=21.0"
           >
             <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
-              <Component />
+            <Component />
             </ErrorBoundary>
           </ExtensionProvider>
         </PersistGate>
       </Provider>
     </>,
-    root,
+    root
   )
 }
 
