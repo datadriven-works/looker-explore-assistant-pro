@@ -529,10 +529,12 @@ ${
           model: { type: 'string', default: currentExplore.modelName },
           view: { type: 'string', default: currentExplore.exploreId },
           fields: { type: 'array', items: { type: 'string' } },
+          filter_expression: { type: 'string' },
           filters: { type: 'object' },
           sorts: { type: 'array', items: { type: 'string' } },
           limit: { type: 'string', default: '500' },
         },
+        required: ['model', 'view', 'fields', 'limit'],
       }
       const response = await sendMessage({ message: contents, responseSchema })
       console.log('response', response)
@@ -561,14 +563,6 @@ ${
       responseJSON['filters'] = filterResponseJSON
       console.log(responseJSON)
 
-      // get the visualizations
-      const visualizationResponseJSON = await generateVisualizationParams(
-        responseJSON,
-        prompt,
-      )
-      console.log(visualizationResponseJSON)
-
-      //responseJSON['vis_config'] = visualizationResponseJSON
 
       return responseJSON
     },
