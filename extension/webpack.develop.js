@@ -1,3 +1,4 @@
+const path = require('path');
 const commonConfig = require('./webpack.config')
 
 module.exports = {
@@ -10,27 +11,36 @@ module.exports = {
   module: {
     rules: [
       ...commonConfig.module.rules,
+      {
+        test: /\.(js|jsx|ts|tsx)?$/,
+        include: /node_modules/,
+      },
     ],
   },
   devServer: {
-    webSocketServer: 'sockjs',
-    client: {
-      overlay: false
+    static: {
+      directory: path.join(__dirname, 'public'), // Ensure you specify the public directory if necessary
     },
-    host: 'localhost',
-    allowedHosts: 'all',
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers':
-        'X-Requested-With, content-type, Authorization',
+      'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization',
     },
-    watchFiles: {
-      options: {
-        ignored: /node_modules/,
-      }
-    }
+    allowedHosts: 'all', // Set to 'auto' to allow any host or use an array for specific hosts
+    port: 8080,
+    liveReload: true,
+    hot: true,
+    client: {
+      overlay: true, // Show errors and warnings overlay in the browser
+      webSocketURL: {
+        hostname: 'localhost',
+        port: 8080,
+        protocol: 'wss',
+      },
+    },
+    server: {
+      type: 'https',
+    },
   },
   plugins: [...commonConfig.plugins],
-  devtool: 'cheap-module-source-map',
 }

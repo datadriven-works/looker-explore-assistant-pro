@@ -1,5 +1,4 @@
 import React, { useEffect,useState } from 'react'
-import styles from './styles.module.css'
 import MarkdownText from '../Chat/MarkdownText'
 import Accordion from '@mui/material/Accordion'
 
@@ -72,31 +71,31 @@ export default function Fallback({ error}: {error: any}) {
     },[])
   
     return (
-          <div className={styles.errorContainer}>
-            <div className={styles.errorBackdrop}></div>
-            <div className={styles.errorCard}>
-              <div className={styles.errorHeader}>
-                <svg className={styles.errorIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="errorContainer">
+            <div className="errorBackdrop"></div>
+            <div className="errorCard">
+              <div className="errorHeader">
+                <svg className="errorIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <h2>An Error Occurred</h2>
               </div>
-              <div className={styles.errorContent}>
-                <div className={styles.errorSection}>
+              <div className="errorContent">
+                <div className="errorSection">
                   <h3>Error Name:</h3><MarkdownText text={errorMessage ? error.name : ''} />
                 </div>
-                <div className={styles.errorSection}>
-                  <h3>Error Message:</h3><p className={styles.messageContainer}><MarkdownText text={errorMessage ? error.message : ''} /></p>
+                <div className="errorSection">
+                  <h3>Error Message:</h3><p className="messageContainer"><MarkdownText text={errorMessage ? error.message : ''} /></p>
                 </div>
-                <div className={styles.errorSection}>
+                <div className="errorSection">
                   <h3>Diagnosis:</h3>
                   <MarkdownText text={errorMessage ? errorMessage.diagnosis : ''} />
                 </div>
-                <div className={styles.errorSection}>
-                  <Accordion label="Troubleshooting Steps" indicatorPosition="left" density={1}>
-                  <ul className={styles.troubleshootingList}>
+                <div className="errorSection">
+
+                  <ul className="troubleshootingList">
                     {errorMessage ? 
                       errorMessage.steps.map((step: string, index: number) => (
                         <li key={index}><MarkdownText text={step} /></li>
@@ -105,7 +104,6 @@ export default function Fallback({ error}: {error: any}) {
                       <li></li>
                     }
                   </ul>
-                  </Accordion>
                 </div>
               </div>
             </div>

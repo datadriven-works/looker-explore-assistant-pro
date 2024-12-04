@@ -8,7 +8,7 @@
     "analyze": "export ANALYZE_MODE=static && npm run build",
     "build": "export BABEL_ENV=build && webpack --config webpack.prod.js",
     "clean": "rm -rf dist",
-    "start": "webpack serve --hot --server-type https  --port 8080 --config webpack.develop.js",
+    "start": "webpack serve --config webpack.develop.js",
     "prebuild": "npm run clean",
     "test": "jest"
   },
@@ -93,7 +93,26 @@
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2",
     "webpack": "^5",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.1.0"
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-react",
+      "@babel/preset-typescript"
+    ],
+    "plugins": [
+      [
+        "@babel/plugin-proposal-class-properties"
+      ],
+      [
+        "@babel/plugin-transform-react-jsx",
+        {
+          "pragmaFrag": "React.Fragment"
+        }
+      ]
+    ]
   }
 }
