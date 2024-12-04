@@ -11,7 +11,6 @@ import looker_filter_doc from '../documents/looker_filter_doc.md'
 import looker_visualization_doc from '../documents/looker_visualization_doc.md'
 
 import { ModelParameters } from '../utils/VertexHelper'
-import { BigQueryHelper } from '../utils/BigQueryHelper'
 import { ExploreParams } from '../slices/assistantSlice'
 import { ExploreFilterValidator, FieldType } from '../utils/ExploreFilterHelper'
 
@@ -61,7 +60,7 @@ const useSendVertexMessage = () => {
   }) => {
 
     const defaultParameters = {
-      temperature: 1,
+      temperature: 2,
       max_output_tokens: 8192,
       top_p: 0.95,
     }
@@ -73,6 +72,7 @@ const useSendVertexMessage = () => {
     }
 
     const body = {
+      model_name: 'gemini-1.5-flash',
       contents: message,
       parameters: parameters,
       response_schema: null 
@@ -452,19 +452,16 @@ ${
       
       | Field              | Type   | Description                                                                                                                                                                                                                                                                          |
       |--------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-      | model              | string | Model                                                                                                                                                                                                                                                                                |
-      | view               | string | Explore Name                                                                                                                                                                                                                                                                         |
-      | fields             | string[] | Fields                                                                                                                                                                                                                                                                                |
-      | pivots             | string[] | Pivots                                                                                                                                                                                                                                                                                |
-      | fill_fields        | string[] | Fill Fields                                                                                                                                                                                                                                                                           |
-      | filters            | object | Filters                                                                                                                                                                                                                                                                               |
-      | filter_expression  | string | Filter Expression                                                                                                                                                                                                                                                                     |
-      | sorts              | string[] | Sorts                                                                                                                                                                                                                                                                                 |
-      | limit              | string | Limit                                                                                                                                                                                                                                                                                 |
-      | column_limit       | string | Column Limit                                                                                                                                                                                                                                                                          |
-      | total              | boolean | Total                                                                                                                                                                                                                                                                                 |
-      | row_total          | string | Raw Total                                                                                                                                                                                                                                                                             |
-      | subtotals          | string[] | Subtotals                                                                                                                                                                                                                                                                             |
+      | model              | string | Model                                                                                                                                                                                                                                                                               |
+      | view               | string | Explore Name 
+      | fields             | string[] | Fields  
+      | pivots             | string[] | Pivots  
+      | filters            | object | Filters     
+      | sorts              | string[] | Sorts  
+      | limit              | string | Limit  the rows, can't be more than 5000
+      | column_limit       | string | Column Limit      
+      | total              | boolean | Total            
+      | row_total          | string | Raw Total         
       | vis_config         | object | Visualization configuration properties. These properties are typically opaque and differ based on the type of visualization used. There is no specified set of allowed keys. The values can be any type supported by JSON. A "type" key with a string value is often present, and is used by Looker to determine which visualization to present. Visualizations ignore unknown vis_config properties. |
       | filter_config      | object | The filter_config represents the state of the filter UI on the explore page for a given query. When running a query via the Looker UI, this parameter takes precedence over "filters". When creating a query or modifying an existing query, "filter_config" should be set to null. Setting it to any other value could cause unexpected filtering behavior. The format should be considered opaque. |
       
@@ -492,29 +489,14 @@ ${
       ${exampleText}
       
       
-      Output
+      Instructions
       ----------
-      
-      Return a JSON that is compatible with the Looker API run_inline_query function as per the spec. Here is an example:
-      
-      {
-        "model":"${currentExplore.modelName}",
-        "view":"${currentExplore.exploreId}",
-        "fields":["category.name","inventory_items.days_in_inventory_tier","products.count"],
-        "filters":{"category.name":"socks"},
-        "sorts":["products.count desc 0"],
-        "limit":"500",
-      }
-      
-      Instructions:
       - choose only the fields in the below lookml metadata
       - prioritize the field description, label, tags, and name for what field(s) to use for a given description
       - generate only one answer, no more.
       - use the Examples for guidance on how to structure the body
       - try to avoid adding dynamic_fields, provide them when very similar example is found in the bottom
-      - Always use the provided current date (${currentDateTime}) when generating Looker URL queries that involve TIMEFRAMES.
-      - only respond with a JSON object
-        
+      - Always use the provided current date (${currentDateTime}) when generating Looker URL queries that involve TIMEFRAMES.        
         
       User Request
       ----------
@@ -528,15 +510,23 @@ ${
         properties: {
           model: { type: 'string', default: currentExplore.modelName },
           view: { type: 'string', default: currentExplore.exploreId },
+          pivots: { type: 'array', items: { type: 'string' } },
+          fill_fields: { type: 'array', items: { type: 'string' } },
+          row_total: { type: 'string' },
+          vis_config: { type: 'object' },
           fields: { type: 'array', items: { type: 'string' } },
           filter_expression: { type: 'string' },
           filters: { type: 'object' },
-          sorts: { type: 'array', items: { type: 'string' } },
-          limit: { type: 'string', default: '500' },
+          sorts: { type: 'array', items: { type: 'string' }, default: [] },
+          limit: { type: 'integer', default: 500 },
         },
-        required: ['model', 'view', 'fields', 'limit'],
+        required: ['model', 'view', 'fields'],
       }
-      const response = await sendMessage({ message: contents, responseSchema })
+      const parameters = {
+        max_output_tokens: 8192,
+        temperature: 1,
+      }
+      const response = await sendMessage({ message: contents, responseSchema, parameters })
       console.log('response', response)
       return response
     },

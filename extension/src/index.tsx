@@ -6,8 +6,8 @@ import { store, persistor } from './store'
 import { PersistGate } from 'redux-persist/integration/react'
 import { ExtensionProvider } from '@looker/extension-sdk-react'
 import { ErrorBoundary } from 'react-error-boundary'
-import Fallback from './components/Error/ErrorFallback'
 import { LinearProgress } from '@mui/material'
+import ErrorFallback from './components/Error/ErrorFallback'
 
 const getRoot = () => {
   const id = 'extension-root'
@@ -37,8 +37,8 @@ const render = (Component: typeof App) => {
             loadingComponent={<LinearProgress />}
             requiredLookerVersion=">=21.0"
           >
-            <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
-            <Component />
+            <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>
+              <Component />
             </ErrorBoundary>
           </ExtensionProvider>
         </PersistGate>

@@ -1,6 +1,6 @@
 import React, { useEffect,useState } from 'react'
 import MarkdownText from '../Chat/MarkdownText'
-import Accordion from '@mui/material/Accordion'
+import ErrorOutline from '@mui/icons-material/ErrorOutline'
 
 interface ErrDiagnosis {
   diagnosis: string,
@@ -62,31 +62,26 @@ export default function Fallback({ error}: {error: any}) {
     },[])
   
     return (
-          <div className="errorContainer">
-            <div className="errorBackdrop"></div>
-            <div className="errorCard">
-              <div className="errorHeader">
-                <svg className="errorIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
+          <div className="max-w-3xl m-auto">
+            <div className="p-4 rounded-lg border-red-400 bg-red-50">
+              <div className="flex flex-col items-center gap-2">
+                <ErrorOutline className="text-red-500 size-12" />
                 <h2>An Error Occurred</h2>
               </div>
-              <div className="errorContent">
-                <div className="errorSection">
-                  <h3>Error Name:</h3><MarkdownText text={errorMessage ? error.name : ''} />
+              <div className="">
+                <div className="">
+                  <h3 className="font-bold">Error Name:</h3><MarkdownText text={errorMessage ? error.name : ''} />
                 </div>
-                <div className="errorSection">
-                  <h3>Error Message:</h3><div className="messageContainer"><MarkdownText text={errorMessage ? error.message : ''} /></div>
+                <div className="">
+                  <h3 className="font-bold">Error Message:</h3><div className="messageContainer"><MarkdownText text={errorMessage ? error.message : ''} /></div>
                 </div>
-                <div className="errorSection">
-                  <h3>Diagnosis:</h3>
+                <div className="">
+                  <h3 className="font-bold">Diagnosis:</h3>
                   <MarkdownText text={errorMessage ? errorMessage.diagnosis : ''} />
                 </div>
-                <div className="errorSection">
+                <div className="">
 
-                  <ul className="troubleshootingList">
+                  <ul className="">
                     {errorMessage ? 
                       errorMessage.steps.map((step: string, index: number) => (
                         <li key={index}><MarkdownText text={step} /></li>
