@@ -19,11 +19,11 @@ const marked = new Marked(
 // Custom renderer to add Tailwind CSS classes
 const renderer = new marked.Renderer()
 
-renderer.heading = (text, level) => {
-  const tag = `h${level}`
+renderer.heading = ({ tokens, depth }) => {
+  const tag = `h${depth}`
   let classes = 'font-bold text-gray-800'
 
-  switch (level) {
+  switch (depth) {
     case 1:
       classes += ' text-3xl'
       break
@@ -47,21 +47,22 @@ renderer.heading = (text, level) => {
       break
   }
 
-  return `<${tag} class="${classes}">${text}</${tag}>`
+  return `<${tag} class="${classes}">${renderer.parser.parseInline(tokens)}</${tag}>`
 }
 
-renderer.paragraph = (text) => {
-  return `<p class="mb-4">${text}</p>`
+renderer.paragraph = ({ tokens }) => {
+  return `<p class="mb-4">${renderer.parser.parseInline(tokens)}</p>`
 }
 
-renderer.list = (body, ordered) => {
+
+renderer.list = ({ ordered }) => {
   const tag = ordered ? 'ol' : 'ul'
   const classes = 'list-disc list-inside mb-4'
-  return `<${tag} class="${classes}">${body}</${tag}>`
+  return `<${tag} class="${classes}">`
 }
 
-renderer.listitem = (text) => {
-  return `<li class="mb-2">${text}</li>`
+renderer.listitem = ({ tokens }) => {
+  return `<li class="mb-2">${renderer.parser.parseInline(tokens)}</li>`
 }
 
 const processText = (text: string) => {

@@ -15,21 +15,6 @@ import { BigQueryHelper } from '../utils/BigQueryHelper'
 import { ExploreParams } from '../slices/assistantSlice'
 import { ExploreFilterValidator, FieldType } from '../utils/ExploreFilterHelper'
 
-const parseJSONResponse = (jsonString: string | null | undefined) => {
-  if(!jsonString) {
-    return ''
-  }
-  
-  if (jsonString.startsWith('```json') && jsonString.endsWith('```')) {
-    jsonString = jsonString.slice(7, -3).trim()
-  }
-
-  try {
-    return JSON.parse(jsonString)
-  } catch (error) {
-    return jsonString
-  }
-}
 
 function formatRow(field: {
   name?: string
@@ -65,13 +50,30 @@ const useSendVertexMessage = () => {
   const exploreRefinementExamples =
     examples.exploreRefinementExamples[currentExploreKey]
 
-  const vertexCloudFunction = async (
-    contents: string,
-    parameters: ModelParameters,
-    responseSchema: any,
-  ) => {
+  const sendMessage = async ({
+    message,
+    parameters = {},
+    responseSchema = null,
+  }: {
+    message: string,
+    parameters?: ModelParameters,
+    responseSchema?: any,
+  }) => {
+
+    const defaultParameters = {
+      temperature: 1,
+      max_output_tokens: 8192,
+      top_p: 0.95,
+    }
+
+    if(!parameters) {
+      parameters = defaultParameters
+    } else {
+      Object.assign(defaultParameters, parameters)
+    }
+
     const body = {
-      contents: contents,
+      contents: message,
       parameters: parameters,
       response_schema: null 
     }
@@ -93,8 +95,19 @@ const useSendVertexMessage = () => {
 
       body: jsonBody,
     })
-    const response = await responseData.text()
-    return response.trim()
+  
+    const textResponse = await responseData.text(); // Fetch the response as text first
+    let parsedResponse;
+
+    try {
+      // Try to parse the response as JSON
+      parsedResponse = JSON.parse(textResponse);
+    } catch (e) {
+      // If parsing fails, treat it as a plain string
+      parsedResponse = textResponse;
+    }
+
+    return parsedResponse; // Return the parsed or plain response
   }
 
   const summarizePrompts = useCallback(
@@ -128,7 +141,7 @@ ${
       Only return the summary of the prompt with no extra explanatation or text
         
     `
-      const response = await sendMessage(contents, {})
+      const response = await sendMessage({ message: contents })
 
       return response
     },
@@ -172,11 +185,17 @@ ${
 
     `
     const responseSchema = {
-      type: 'string',
-      enum: ['data summary', 'refining question'],
+      type: 'object',
+      properties: {
+        queryType: {
+          type: 'string',
+          enum: ['data summary', 'refining question'],
+        },
+      },
     }
-    const response = await sendMessage(contents, {}, responseSchema)
-    return response === 'data summary'
+    const response = await sendMessage({ message: contents, responseSchema })
+
+    return response?.queryType === 'data summary'
   }
 
   const summarizeExplore = useCallback(
@@ -237,7 +256,7 @@ ${
       Summarize the data above
     
     `
-      const response = await sendMessage(contents, {})
+      const response = await sendMessage({ message: contents })
 
       const refinedContents = `
       The following text represents summaries of a given dashboard's data. 
@@ -245,8 +264,8 @@ ${
 
         Make this much more concise for a slide presentation using the following format. The summary should be a markdown documents that contains a list of sections, each section should have the following details:  a section title, which is the title for the given part of the summary, and key points which a list of key points for the concise summary. Data should be returned in each section, you will be penalized if it doesn't adhere to this format. Each summary should only be included once. Do not include the same summary twice.
         `
-
-      const refinedResponse = await sendMessage(refinedContents, {})
+      
+      const refinedResponse = await sendMessage({ message: refinedContents })
       return refinedResponse
     },
     [currentExplore],
@@ -283,7 +302,17 @@ ${
      * Step 3: verify that the field ids are indeed Field Ids from the table. If they are not, you should return an empty dictionary. There should be a period in the field id.
      `
       console.log(filterContents)
-      const filterResponseInitial = await sendMessage(filterContents, {})
+      const responseSchema = {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            field_id: { type: 'string' },
+            filter_expression: { type: 'string' },
+          },
+        },
+      }
+      const filterResponseInitial = await sendMessage({ message: filterContents, responseSchema })
 
       // check the response
       const filterContentsCheck =
@@ -292,21 +321,21 @@ ${
   
            # Output
      
-           ${filterResponseInitial}
+           ${JSON.stringify(filterResponseInitial)}
      
            # Instructions
      
            Verify the output, make changes and return the JSON
      
            `
-      const filterResponseCheck = await sendMessage(filterContentsCheck, {})
-      const filterResponseCheckJSON = parseJSONResponse(filterResponseCheck)
+      
+      const filterResponseCheck = await sendMessage({ message: filterContentsCheck, responseSchema })
 
       // Iterate through each filter
       const filterResponseJSON: any = {}
 
       // Validate each filter
-      filterResponseCheckJSON.forEach(function (filter: {
+      filterResponseCheck.forEach(function (filter: {
         field_id: string
         filter_expression: string
       }) {
@@ -343,7 +372,7 @@ ${
       })
 
       console.log('filterResponseInitial', filterResponseInitial)
-      console.log('filterResponseCheckJSON', filterResponseCheckJSON)
+      console.log('filterResponseCheck', filterResponseCheck)
       console.log('filterResponseJSON', filterResponseJSON)
 
       return filterResponseJSON
@@ -388,11 +417,12 @@ ${
       \`\`\`
 
     `
-    const parameters = {
-      max_output_tokens: 1000,
+    const responseSchema = {
+      type: 'object',
     }
-    const response = await sendMessage(contents, parameters)
-    return parseJSONResponse(response)
+    const response = await sendMessage({ message: contents, responseSchema })
+    console.log('visualization response', response)
+    return response
   }
 
   const generateBaseExploreParams = useCallback(
@@ -492,14 +522,21 @@ ${
       
       `
 
-      const parameters = {
-        max_output_tokens: 1000,
-      }
       console.log(contents)
-      const response = await sendMessage(contents, parameters)
-      const responseJSON = parseJSONResponse(response)
-
-      return responseJSON
+      const responseSchema = {
+        type: 'object',
+        properties: {
+          model: { type: 'string', default: currentExplore.modelName },
+          view: { type: 'string', default: currentExplore.exploreId },
+          fields: { type: 'array', items: { type: 'string' } },
+          filters: { type: 'object' },
+          sorts: { type: 'array', items: { type: 'string' } },
+          limit: { type: 'string', default: '500' },
+        },
+      }
+      const response = await sendMessage({ message: contents, responseSchema })
+      console.log('response', response)
+      return response
     },
     [currentExplore],
   )
@@ -538,20 +575,12 @@ ${
     [settings],
   )
 
-  const sendMessage = async (message: string, parameters: ModelParameters, responseSchema: any) => {
-    const wrappedMessage = promptWrapper(message)
-    try {
-      let response = await vertexCloudFunction(wrappedMessage, parameters, responseSchema)
-      if (response.startsWith('```json') && response.endsWith('```')) {
-        response = response.slice(7, -3).trim()
-      }
-
-      return response
-    } catch (error) {
-      showBoundary(error)
-      return
-    }
+  interface SendMessageProps {  
+    message: string
+    parameters?: ModelParameters
+    responseSchema?: any
   }
+
 
   return {
     generateExploreParams,
