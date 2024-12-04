@@ -4,8 +4,8 @@ import { RootState } from '../../store'
 import Message from '../../components/Chat/Message'
 import ExploreMessage from '../../components/Chat/ExploreMessage'
 import SummaryMessage from '../../components/Chat/SummaryMessage'
-import { CircularProgress } from '@material-ui/core'
 import { AssistantState, ChatMessage } from '../../slices/assistantSlice'
+import CircularProgress from '@mui/material/CircularProgress'
 
 interface MessageThreadProps {
   endOfMessageRef: React.RefObject<HTMLDivElement>

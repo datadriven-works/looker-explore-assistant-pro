@@ -1,9 +1,9 @@
-import { Send } from '@material-ui/icons'
 import React, { useState, useRef, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '../../store'
 import { setIsChatMode, setQuery } from '../../slices/assistantSlice'
 import clsx from 'clsx'
+import { Send } from '@mui/icons-material'
 
 const PromptInput = () => {
   const dispatch = useDispatch()

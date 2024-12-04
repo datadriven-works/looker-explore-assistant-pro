@@ -1,7 +1,7 @@
 import React, { useEffect,useState } from 'react'
 import styles from './styles.module.css'
-import { Accordion2 } from '@looker/components'
 import MarkdownText from '../Chat/MarkdownText'
+import Accordion from '@mui/material/Accordion'
 
 interface ErrDiagnosis {
   diagnosis: string,
@@ -95,7 +95,7 @@ export default function Fallback({ error}: {error: any}) {
                   <MarkdownText text={errorMessage ? errorMessage.diagnosis : ''} />
                 </div>
                 <div className={styles.errorSection}>
-                  <Accordion2 label="Troubleshooting Steps" indicatorPosition="left" density={1}>
+                  <Accordion label="Troubleshooting Steps" indicatorPosition="left" density={1}>
                   <ul className={styles.troubleshootingList}>
                     {errorMessage ? 
                       errorMessage.steps.map((step: string, index: number) => (
@@ -105,7 +105,7 @@ export default function Fallback({ error}: {error: any}) {
                       <li></li>
                     }
                   </ul>
-                  </Accordion2>
+                  </Accordion>
                 </div>
               </div>
             </div>

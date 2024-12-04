@@ -1,10 +1,10 @@
-import { Chip, Section, Spinner } from '@looker/components'
 import React, { useEffect } from 'react'
 import Message from './Message'
 import useSendVertexMessage from '../../hooks/useSendVertexMessage'
 import MarkdownText from './MarkdownText'
 import { ExploreParams, SummarizeMesage, updateLastHistoryEntry, updateSummaryMessage } from '../../slices/assistantSlice'
 import { useDispatch } from 'react-redux'
+import { Chip, LinearProgress } from '@mui/material'
 
 interface SummaryMessageProps {
   message: SummarizeMesage
@@ -52,18 +52,16 @@ const SummaryMessage = ({ message, onSummaryComplete }: SummaryMessageProps) => 
 
   return (
     <Message actor="system" createdAt={Date.now()}>
-      <Section my={'u2'}>
-        <Chip disabled>Summary</Chip>
-        {loading ? (
-          <Spinner size={20} my={'u2'} />
-        ) : (
-          <>
-            <div className="text-sm mt-6">
+      <Chip label="Summary" />
+      {loading ? (
+        <LinearProgress />
+      ) : (
+        <>
+          <div className="text-sm mt-6">
               <MarkdownText text={summary} />
             </div>
           </>
         )}
-      </Section>
     </Message>
   )
 }

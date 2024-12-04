@@ -11,7 +11,7 @@ import { ExploreHelper } from '../../utils/ExploreHelper'
 import {
   openSidePanel,
 } from '../../slices/assistantSlice'
-import { OpenInNew } from '@material-ui/icons'
+import { OpenInNew } from '@mui/icons-material'
 
 interface ExploreMessageProps {
   exploreId: string

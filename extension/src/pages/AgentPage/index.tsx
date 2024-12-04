@@ -23,7 +23,7 @@ import {
 } from '../../slices/assistantSlice'
 import MessageThread from './MessageThread'
 import clsx from 'clsx'
-import { Close } from '@material-ui/icons'
+import { Close } from '@mui/icons-material'
 import {
   FormControl,
   InputLabel,

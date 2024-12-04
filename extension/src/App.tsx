@@ -1,6 +1,4 @@
 import React from 'react'
-import { hot } from 'react-hot-loader/root'
-import { Route, Switch, Redirect } from 'react-router-dom'
 import { useLookerFields } from './hooks/useLookerFields'
 import { useBigQueryExamples } from './hooks/useBigQueryExamples'
 import AgentPage from './pages/AgentPage'
@@ -12,16 +10,9 @@ const ExploreApp = () => {
 
   return (
     <>
-        <Switch>
-          <Route path="/index" exact>
-              <AgentPage />
-          </Route>
-          <Route>
-            <Redirect to="/index" />
-          </Route>
-        </Switch>
+      <AgentPage />
     </>
   )
 }
 
-export const App = hot(ExploreApp)
+export const App = ExploreApp
