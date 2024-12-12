@@ -33,7 +33,41 @@ export interface FilterExpression {
   [key: string]: string[]
 }
 
+
 export class ExploreFilterValidator {
+  private static isRealDate(dateString: string): boolean {
+    const parts = dateString.split(/[-/]/).map(Number);
+  
+    // Handle year-month-day (YYYY-MM-DD or YYYY/MM/DD)
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      if (!year || month < 1 || month > 12 || !day) return false; // Validate month and day
+      const date = new Date(year, month - 1, day); // JavaScript months are 0-indexed
+      return (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+      );
+    }
+  
+    // Handle year-month (YYYY-MM or YYYY/MM)
+    if (parts.length === 2) {
+      const [year, month] = parts;
+      if (!year || month < 1 || month > 12) return false; // Validate month
+      return true; // Valid year and month
+    }
+  
+    // Handle year only (YYYY)
+    if (parts.length === 1) {
+      const [year] = parts;
+      return year > 0; // Ensure year is positive
+    }
+  
+    // If none of the valid formats match
+    return false;
+  }
+  
+
   static isValidStringFilter(filter: string): boolean {
     const rules: ((f: string) => boolean)[] = [
       (f) => /^[^%,]+$/.test(f), // Exact match
@@ -48,6 +82,7 @@ export class ExploreFilterValidator {
       (f) => f === '-EMPTY' || f === '-NULL', // Not EMPTY or not NULL
       (f) => /^[^%]+%(,[^%,]+)+$/.test(f), // Starts with or exact match
       (f) => /^_[^%]+$/.test(f), // Single character wildcard
+      (f) => /^\d{4}(-|\/)\d{2}(-|\/)\d{2}$/.test(f) && this.isRealDate(f),
     ]
 
     return rules.some((rule) => rule(filter))
@@ -100,17 +135,17 @@ export class ExploreFilterValidator {
   static isValidDateFilter(filter: string): boolean {
     const rules: ((f: string) => boolean)[] = [
       // this {interval}
-      (f) => /^this\s+(week|month|quarter|year|fiscal\s+year)$/.test(f),
+      (f) => /^this\s+(week|month|quarter|year|fiscal\s+quarter|fiscal\s+year)$/.test(f),
 
       // last {n} {interval}
       (f) =>
-        /^last\s+(\d+\s+)?(second|minute|hour|day|week|month|quarter|year)s?$/.test(
+        /^last\s+(\d+\s+)?(second|minute|hour|day|week|month|quarter|year|fiscal\s+quarter|fiscal\s+year)s?$/.test(
           f,
         ),
 
       // next {n} {interval}
       (f) =>
-        /^next\s+(\d+\s+)?(second|minute|hour|day|week|month|quarter|year)s?$/.test(
+        /^next\s+(\d+\s+)?(second|minute|hour|day|week|month|quarter|year|fiscal\s+quarter|fiscal\s+year)s?$/.test(
           f,
         ),
 
@@ -172,9 +207,9 @@ export class ExploreFilterValidator {
       (f) => /^FY\d{4}-Q[1-4]$/.test(f),
 
       // Absolute Dates
-      (f) => /^\d{4}(\/|-)\d{2}(\/|-)\d{2}$/.test(f),
-      (f) => /^\d{4}(\/|-)\d{2}$/.test(f),
-      (f) => /^\d{4}$/.test(f),
+      (f) => /^\d{4}(\/|-)\d{2}(\/|-)\d{2}$/.test(f) && this.isRealDate(f),
+      (f) => /^\d{4}(\/|-)\d{2}$/.test(f) && this.isRealDate(f),
+      (f) => /^\d{4}$/.test(f) && this.isRealDate(f),
 
       // {time} for {n} {interval} (using slashes or dashes)
       (f) =>

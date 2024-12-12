@@ -153,14 +153,17 @@ describe('ExploreFilterValidator', () => {
       { input: 'next month', expected: true, description: 'Next month' },
       { input: 'next week', expected: true, description: 'Next week' },
       { input: 'next quarter', expected: true, description: 'Next quarter' },
-      { input: 'next day', expected: false, description: 'Invalid interval' },
+      { input: 'next day', expected: true, description: 'Valid next interval' },
+      { input: 'next 2 days', expected: true, description: 'Valid next interval with count' },
+      { input: 'next week', expected: true, description: 'Valid next interval without count' },
+      { input: 'next', expected: false, description: 'Invalid interval without specification' },
     
       // Last {interval}
       { input: 'last year', expected: true, description: 'Last year' },
       { input: 'last month', expected: true, description: 'Last month' },
       { input: 'last week', expected: true, description: 'Last week' },
       { input: 'last quarter', expected: true, description: 'Last quarter' },
-      { input: 'last day', expected: false, description: 'Invalid interval' },
+      { input: 'last day', expected: true, description: 'Last day' },
     
       // {n} {interval}, {n} {interval} ago
       { input: '3 days', expected: true, description: 'N days' },
