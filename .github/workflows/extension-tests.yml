@@ -20,10 +20,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - name: Change to project directory
-      run: cd explore-assistant-extension
+      run: cd extension
     - name: Install dependencies
-      working-directory: ./explore-assistant-extension
+      working-directory: ./extension
       run: npm ci
     - name: Run Unit tests
-      working-directory: ./explore-assistant-extension
+      working-directory: ./extension
       run: npm test tests/unit_tests  
