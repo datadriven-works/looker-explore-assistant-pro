@@ -23,7 +23,7 @@ jobs:
       run: cd extension
     - name: Install dependencies
       working-directory: ./extension
-      run: npm ci
+      run: npm install && npm ci
     - name: Run Unit tests
       working-directory: ./extension
       run: npm test tests/unit_tests  
