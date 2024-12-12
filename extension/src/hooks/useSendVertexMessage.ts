@@ -14,6 +14,52 @@ import { ModelParameters } from '../utils/VertexHelper'
 import { ExploreParams } from '../slices/assistantSlice'
 import { ExploreFilterValidator, FieldType } from '../utils/ExploreFilterHelper'
 
+const parseJSONResponse = (jsonString: string | null | undefined): any => {
+  if (!jsonString) {
+    return null;
+  }
+
+  // Remove markdown code block delimiters if present
+  if (jsonString.startsWith('```json') && jsonString.endsWith('```')) {
+    jsonString = jsonString.slice(7, -3).trim();
+  }
+
+  try {
+    let parsed = JSON.parse(jsonString);
+    // Function to recursively parse any stringified JSON within the object
+    const recursiveParse = (obj: any): any => {
+      if (typeof obj === 'string') {
+        try {
+          // Attempt to parse the string
+          const parsedInner = JSON.parse(obj);
+          // If successful, recursively parse the result
+          return recursiveParse(parsedInner);
+        } catch {
+          // If parsing fails, return the string as is
+          return obj;
+        }
+      } else if (Array.isArray(obj)) {
+        return obj.map(item => recursiveParse(item));
+      } else if (typeof obj === 'object' && obj !== null) {
+        const newObj: any = {};
+        for (const key in obj) {
+          newObj[key] = recursiveParse(obj[key]);
+        }
+        return newObj;
+      }
+      // Return the value if it's neither string, array, nor object
+      return obj;
+    };
+
+    return recursiveParse(parsed);
+    
+  } catch (error) {
+    // If the entire string isn't valid JSON, return it as is
+    console.log("error catch for parseJSONResponse: ",error)
+    return jsonString;
+  }
+};
+
 
 function formatRow(field: {
   name?: string
@@ -103,8 +149,9 @@ const useSendVertexMessage = () => {
       // Try to parse the response as JSON
       parsedResponse = JSON.parse(textResponse);
     } catch (e) {
+      console.error(e)
       // If parsing fails, treat it as a plain string
-      parsedResponse = textResponse;
+      parsedResponse = parseJSONResponse(textResponse);
     }
 
     return parsedResponse; // Return the parsed or plain response
@@ -265,9 +312,10 @@ ${
     async (prompt: string, dimensions: any[], measures: any[]) => {
       // get the filters
       const filterContents = `
-  
+    looker_filter_expression_documentation:
+     """
      ${looker_filter_doc}
-     
+     """
      # LookML Definitions
      
      Below is a table of dimensions and measures that can be used to determine what the filters should be. Pay attention to the dimension type when translating the filters.
@@ -316,7 +364,7 @@ ${
      
            # Instructions
      
-           Verify the output, make changes and return the JSON
+           Verify the output, make changes, UNDER NO CIRCUMSTANCES break the rules from looker_filter_expression_documentation, and return the JSON
      
            `
       
@@ -517,6 +565,8 @@ ${
         temperature: 1,
       }
       const response = await sendMessage({ message: contents, responseSchema, parameters })
+
+
       console.log('response', response)
       return response
     },

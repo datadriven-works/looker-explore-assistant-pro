@@ -8,6 +8,8 @@ Matches in string filters depend on the case_sensitive setting in your model fil
 
 | Example   | Description   |
 |-----------|-------------------------------------------------------------------------------|
+| NULL      | value is null |
+| -NULL     | value of column is not null |
 | FOO       | is equal to "FOO", exactly |
 | FOO,BAR   | is equal to either "FOO" or "BAR", exactly  |
 | %FOO%     | contains "FOO", matches "buffoon" and "fast food" |
@@ -15,14 +17,12 @@ Matches in string filters depend on the case_sensitive setting in your model fil
 | %FOO      | ends with "FOO", matches "buffoo" and "fast foo" but not "buffoon" or "fast food"   |
 | F%OD      | starts with an "F" and ends with "OD", matches "fast food"                                                                                   |
 | EMPTY     | string is empty (has zero characters) or is null (no value)  |
-| NULL      | value is null (when it is used as part of a LookML filter expression, place NULL in quotes, as shown on the filters documentation page)       |
 | -FOO      | is not equal to "FOO" (is any value except "FOO"), matches "pizza", "trash", "fun" but not "foo"  |
 | -FOO,-BAR | is not equal to either "FOO" or "BAR", matches any value except "FOO" and "BAR" |
 | -%FOO%    | doesn't contain "FOO", does not match "buffoon" or "fast food"      |
 | -FOO%     | doesn't start with "FOO", does not match "foolish" or "food"   |
 | -%FOO     | doesn't end with "FOO", does not match "buffoo" or "fast foo"       |
 | -EMPTY    | string is not empty (has at least one character)  |
-| -NULL     | value of column is not null (when it is used as part of a LookML filter expression, place -NULL in quotes, as shown on the filters documentation page) |
 | FOO%,BAR  | starts with "FOO" or is "BAR" exactly, matches "food" and matches "bar" but not "barfood"    |
 | FOO%,-FOOD| starts with "FOO" but is not "FOOD"  |
 | _UF       | has any single character followed by "UF", matches "buffoon"    |
