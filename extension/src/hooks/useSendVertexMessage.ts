@@ -598,6 +598,13 @@ ${
         responseJSON['fields'] = responseJSON['fields'].filter((field: string, index: number, self: string[]) => self.indexOf(field) === index)
       }
 
+      const visualizationResponseJSON = await generateVisualizationParams(
+        responseJSON,
+        prompt,
+      )
+
+      responseJSON['vis_config'] = visualizationResponseJSON
+
       console.log('Final Response', responseJSON)
 
 
