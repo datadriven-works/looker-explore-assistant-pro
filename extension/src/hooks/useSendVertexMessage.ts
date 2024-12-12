@@ -72,7 +72,7 @@ const useSendVertexMessage = () => {
     }
 
     const body = {
-      model_name: 'gemini-1.5-flash',
+      model_name: 'gemini-2.0-flash-exp',
       contents: message,
       parameters: parameters,
       response_schema: null 
@@ -184,18 +184,9 @@ ${
       Return "data summary" if the user is asking for a data summary, and "refining question" if the user is continuing to refine their question. Only output one answer, no more. Only return one those two options. If you're not sure, return "refining question".
 
     `
-    const responseSchema = {
-      type: 'object',
-      properties: {
-        queryType: {
-          type: 'string',
-          enum: ['data summary', 'refining question'],
-        },
-      },
-    }
-    const response = await sendMessage({ message: contents, responseSchema })
-
-    return response?.queryType === 'data summary'
+   
+    const response = await sendMessage({ message: contents })
+    return response === 'data summary'
   }
 
   const summarizeExplore = useCallback(
@@ -455,7 +446,7 @@ ${
       | model              | string | Model                                                                                                                                                                                                                                                                               |
       | view               | string | Explore Name 
       | fields             | string[] | Fields  
-      | pivots             | string[] | Pivots  
+      | pivots             | string[] | Fields to pivot by  
       | filters            | object | Filters     
       | sorts              | string[] | Sorts  
       | limit              | string | Limit  the rows, can't be more than 5000
@@ -508,19 +499,18 @@ ${
       const responseSchema = {
         type: 'object',
         properties: {
-          model: { type: 'string', default: currentExplore.modelName },
-          view: { type: 'string', default: currentExplore.exploreId },
-          pivots: { type: 'array', items: { type: 'string' } },
-          fill_fields: { type: 'array', items: { type: 'string' } },
-          row_total: { type: 'string' },
-          vis_config: { type: 'object' },
-          fields: { type: 'array', items: { type: 'string' } },
-          filter_expression: { type: 'string' },
-          filters: { type: 'object' },
+          model: { type: 'string', default: currentExplore.modelName, description: 'Model' },
+          view: { type: 'string', default: currentExplore.exploreId, description: 'Explore Name' },
+          pivots: { type: 'array', items: { type: 'string' }, description: 'Fields to pivot by. They must also be in the fields array.' },
+          fill_fields: { type: 'array', items: { type: 'string' }, description: 'Fields to fill' },
+          row_total: { type: 'string', description: 'Raw Total' , default: ''},
+          vis_config: { type: 'object', description: 'Visualization configuration properties in JSON format' },
+          fields: { type: 'array', items: { type: 'string' }, default: [] },
+          filters: { type: 'object', default: {} },
           sorts: { type: 'array', items: { type: 'string' }, default: [] },
           limit: { type: 'integer', default: 500 },
         },
-        required: ['model', 'view', 'fields'],
+        required: ['model', 'view', 'fields', 'filters', 'sorts', 'limit', 'vis_config', 'pivots'],
       }
       const parameters = {
         max_output_tokens: 8192,
@@ -551,19 +541,20 @@ ${
       ])
 
       responseJSON['filters'] = filterResponseJSON
-      console.log(responseJSON)
+
+      // if there are pivots, add them to the fields array if they are not already there
+      if(responseJSON['pivots'] && responseJSON['pivots'].length > 0) {
+        responseJSON['fields'] = [...responseJSON['fields'], ...responseJSON['pivots']]
+        responseJSON['fields'] = responseJSON['fields'].filter((field: string, index: number, self: string[]) => self.indexOf(field) === index)
+      }
+
+      console.log('Final Response', responseJSON)
 
 
       return responseJSON
     },
     [settings],
   )
-
-  interface SendMessageProps {  
-    message: string
-    parameters?: ModelParameters
-    responseSchema?: any
-  }
 
 
   return {
