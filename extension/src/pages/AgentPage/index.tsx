@@ -34,6 +34,7 @@ import {
   Tooltip,
 } from '@mui/material'
 import { getRelativeTimeString } from '../../utils/time'
+import { useGenerateContent } from '../../hooks/useGenerateContent'
 
 const toCamelCase = (input: string): string => {
   // Remove underscores, make following letter uppercase
@@ -52,8 +53,7 @@ const AgentPage = () => {
   const endOfMessagesRef = useRef<HTMLDivElement>(null) // Ref for the last message
   const dispatch = useDispatch()
   const [expanded, setExpanded] = useState(false)
-  const { generateExploreParams, isSummarizationPrompt, summarizePrompts } =
-    useSendVertexMessage()
+  const { sendMessage } = useGenerateContent()
 
   const {
     isChatMode,
@@ -118,10 +118,6 @@ const AgentPage = () => {
       )
     }
 
-    console.log('Prompt List: ', promptList)
-    console.log(currentExploreThread)
-    console.log(currentExplore)
-
     dispatch(
       addMessage({
         uuid: uuidv4(),
@@ -132,63 +128,33 @@ const AgentPage = () => {
       }),
     )
 
-    const [promptSummary, isSummary] = await Promise.all([
-      summarizePrompts(promptList),
-      isSummarizationPrompt(query),
-    ])
+    const response = await sendMessage({
+      message: query,
+    })
 
-    if (!promptSummary) {
-      dispatch(setIsQuerying(false))
-      return
+    if(response.length > 0) {
+
+      // get the text from the response
+      let responseText = ''
+      response.forEach((oneResponse: any) => {
+        if(oneResponse.text) {
+          responseText += oneResponse.text
+        }
+      })
+
+      if (responseText) {
+        dispatch(addMessage({
+          uuid: uuidv4(),
+          message: responseText,
+          actor: 'system',
+          createdAt: Date.now(),
+          type: 'text',
+        }))
+      }
     }
 
-    const { dimensions, measures } = semanticModels[exploreKey]
-    const exploreGenerationExamples =
-      examples.exploreGenerationExamples[exploreKey]
-
-    const newExploreParams = await generateExploreParams(
-      promptSummary,
-      dimensions,
-      measures,
-      exploreGenerationExamples,
-    )
-    console.log('New Explore URL: ', newExploreParams)
     dispatch(setIsQuerying(false))
     dispatch(setQuery(''))
-
-    dispatch(
-      updateCurrentThread({
-        exploreParams: newExploreParams,
-        summarizedPrompt: promptSummary,
-      }),
-    )
-
-    if (isSummary) {
-      dispatch(
-        addMessage({
-          exploreParams: newExploreParams,
-          uuid: uuidv4(),
-          actor: 'system',
-          createdAt: Date.now(),
-          summary: '',
-          type: 'summarize',
-        }),
-      )
-    } else {
-      dispatch(setSidePanelExploreParams(newExploreParams))
-      dispatch(openSidePanel())
-
-      dispatch(
-        addMessage({
-          exploreParams: newExploreParams,
-          uuid: uuidv4(),
-          summarizedPrompt: promptSummary,
-          actor: 'system',
-          createdAt: Date.now(),
-          type: 'explore',
-        }),
-      )
-    }
 
     // scroll to bottom of message thread
     scrollIntoView()

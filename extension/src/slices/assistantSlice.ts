@@ -78,7 +78,15 @@ export interface SummarizeMesage {
   summary: string
 }
 
-export type ChatMessage = Message | ExploreMessage | SummarizeMesage
+export interface TextMessage {
+  uuid: string
+  actor: 'user' | 'system'
+  createdAt: number
+  message: string
+  type: 'text'
+}
+
+export type ChatMessage = Message | ExploreMessage | SummarizeMesage | TextMessage
 
 export type ExploreThread = {
   uuid: string
