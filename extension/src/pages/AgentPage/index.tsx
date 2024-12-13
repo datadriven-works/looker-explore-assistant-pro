@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import PromptInput from './PromptInput'
 import Sidebar from './Sidebar'
 import { v4 as uuidv4 } from 'uuid'
@@ -39,6 +39,7 @@ import { getRelativeTimeString } from '../../utils/time'
 import { useGenerateContent } from '../../hooks/useGenerateContent'
 import { formatRow } from '../../hooks/useSendVertexMessage'
 import { ExploreHelper } from '../../utils/ExploreHelper'
+import { ExtensionContext } from '@looker/extension-sdk-react'
 
 const exploreRequestBodySchema = {
   fields: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to include in the explore' },
@@ -109,6 +110,9 @@ const AgentPage = () => {
   const dispatch = useDispatch()
   const [expanded, setExpanded] = useState(false)
   const { generateContent, generateExploreQuery } = useGenerateContent()
+  const { extensionSDK } = useContext(ExtensionContext)
+  const hostUrl = extensionSDK.lookerHostData?.hostUrl
+  const hostName = hostUrl ? new URL(hostUrl).hostname : ''
 
   const {
     isChatMode,
@@ -251,7 +255,7 @@ const AgentPage = () => {
       }
     ]  
     
-    const systemInstruction = `You are a helpful assistant that is inside of Looker. Your job is to help me answer questions about this data set ${currentExploreThread?.exploreKey}. 
+    const systemInstruction = `You are a helpful assistant that is inside of Looker. Your job is to help me answer questions about this data set ${currentExploreThread?.exploreKey}. The model is ${currentExplore.modelName} and the explore is ${currentExplore.exploreId}. If you make links to an explore, they should look like https://${hostName}/explore/${currentExplore.modelName}/${currentExplore.exploreId}. If you're generating a link to an explore, prefer to use the get_explore_link tool instead of trying to generate it yourself.
     
     Here are the dimensions and measures that are defined in this data set:
      | Field Id | Field Type | LookML Type | Label | Description | Tags |
@@ -260,7 +264,7 @@ const AgentPage = () => {
      ${measures.map(formatRow).join('\n')}
     
 
-    Return text in markdown format.
+    Return text in markdown format. When showing links, use the markdown link format.
     `
   
     // We'll do up to 10 rounds of evaluation in case there are multiple function calls
@@ -359,11 +363,10 @@ const AgentPage = () => {
           contentList.push(functionResponseMessage)
         } else if (functionName === 'get_explore_link') {
 
-          console.log(functionArguments.request_body.content)
-          const params = ExploreHelper.encodeExploreParams(functionArguments.request_body.content)
+          const params = ExploreHelper.encodeExploreParams(functionArguments.request_body)
+          params.toggle = 'vis,data'
           const paramString = new URLSearchParams(params).toString()
-          console.log(paramString)
-          const uri = `/explore/${currentExplore.modelName}/${currentExplore.exploreId}?${paramString}`
+          const uri = `https://${hostName}/explore/${currentExplore.modelName}/${currentExplore.exploreId}?${paramString}`
 
           const functionResponseMessage: FunctionResponse = {
             uuid: uuidv4(),

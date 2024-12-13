@@ -97,6 +97,10 @@ renderer.table = (token: Tokens.Table) => {
     + '</table>\n';
 }
 
+renderer.link = ({ href, title, text }: Tokens.Link) => {
+  return `<a href="${href}" title="${title}" target="_blank" class="text-blue-500 hover:underline">${text}</a>`
+}
+
 const processText = (text: string) => {
   if (!text) {
     return text
@@ -109,7 +113,7 @@ const processText = (text: string) => {
   return modifiedText
 }
 
-const MarkdownText = ({ text }: { text: string }) => {
+const MarkdownText = ({ text }: { text: string }) => {w
   return (
     <div
       dangerouslySetInnerHTML={{
