@@ -38,6 +38,20 @@ import {
 import { getRelativeTimeString } from '../../utils/time'
 import { useGenerateContent } from '../../hooks/useGenerateContent'
 import { formatRow } from '../../hooks/useSendVertexMessage'
+import { ExploreHelper } from '../../utils/ExploreHelper'
+
+const exploreRequestBodySchema = {
+  fields: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to include in the explore' },
+  filters: { type: 'OBJECT', description: 'The filters to apply to the explore' },
+  sorts: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The sorts to apply to the explore' },
+  limit: { type: 'INTEGER', description: 'The limit to apply to the explore' },
+  vis_config: { type: 'OBJECT', description: 'The visualization configuration to apply to the explore' },
+  pivots: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to pivot by. They must also be in the fields array.' },
+  fill_fields: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Fields to fill' },
+  row_total: { type: 'STRING', description: 'Raw Total', default: '' },
+  model: { type: 'STRING', description: 'The model to use for the explore' },
+  view: { type: 'STRING', description: 'The view to use for the explore' },
+}
 
 const toCamelCase = (input: string): string => {
   // Remove underscores, make following letter uppercase
@@ -94,7 +108,7 @@ const AgentPage = () => {
   const endOfMessagesRef = useRef<HTMLDivElement>(null) // Ref for the last message
   const dispatch = useDispatch()
   const [expanded, setExpanded] = useState(false)
-  const { generateContent } = useGenerateContent()
+  const { generateContent, generateExploreQuery } = useGenerateContent()
 
   const {
     isChatMode,
@@ -178,11 +192,65 @@ const AgentPage = () => {
           },
         },
       },
+      {
+        name: 'get_explore_query',
+        description: 'Generate the request body to a Looker explore that answers the user question. The request body will be compatible with the Looker API endpoints for run_inline_query. It will use the dimensions/measures defined in the semantic model to create the explore.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            user_request: {
+              type: 'STRING',
+              description: 'The user request to transform into a Looker explore',
+            },
+          },
+          required: ['user_request'],
+        },
+      },
+      {
+        name: 'get_explore_link',
+        description: 'Generate the URL for a Looker explore based on a valid request body that is compatible with the Looker API endpoints for run_inline_query. This will return a full qualified URL that can be used to view the explore in Looker.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            request_body: {
+              type: 'OBJECT',
+              description: 'The request body to generate a URL for',
+              properties: exploreRequestBodySchema
+            },
+          },
+          required: ['request_body'],
+        },
+      },
+      {
+        name: 'get_data_summary',
+        description: 'Generate a summary of the data in the explore. We will fetch the data from the explore, and create a summary. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            request_body: {
+              type: 'OBJECT',
+              description: 'The request body to generate a summary for',
+              properties: exploreRequestBodySchema
+            },
+          },
+          required: ['request_body'],
+        },
+      },
+      { 
+        name: 'get_data_sample',
+        description: 'Generate a sample of the data in the explore. We will fetch the data from the explore, and create a sample. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            request_body: {
+              type: 'OBJECT',
+              description: 'The request body to generate a sample for',
+            },
+          },
+        },
+      }
     ]  
     
-
-
-  
     const systemInstruction = `You are a helpful assistant that is inside of Looker. Your job is to help me answer questions about this data set ${currentExploreThread?.exploreKey}. 
     
     Here are the dimensions and measures that are defined in this data set:
@@ -268,6 +336,52 @@ const AgentPage = () => {
           }
           dispatch(addMessage(functionResponseMessage))
           contentList.push(functionResponseMessage)
+        } else if (functionName === 'get_explore_query') {
+
+          const response = await generateExploreQuery({
+            userRequest: functionArguments.user_request,
+            modelName: currentExplore.modelName,
+            exploreId: currentExplore.exploreId,
+            dimensions,
+            measures,
+            examples: examples.exploreGenerationExamples,
+          })
+
+          const functionResponseMessage: FunctionResponse = {
+            uuid: uuidv4(),
+            callUuid: functionCallMessage.uuid,
+            name: functionName,
+            response: response,
+            createdAt: Date.now(),
+            type: 'functionResponse',
+          }
+          dispatch(addMessage(functionResponseMessage))
+          contentList.push(functionResponseMessage)
+        } else if (functionName === 'get_explore_link') {
+
+          console.log(functionArguments.request_body.content)
+          const params = ExploreHelper.encodeExploreParams(functionArguments.request_body.content)
+          const paramString = new URLSearchParams(params).toString()
+          console.log(paramString)
+          const uri = `/explore/${currentExplore.modelName}/${currentExplore.exploreId}?${paramString}`
+
+          const functionResponseMessage: FunctionResponse = {
+            uuid: uuidv4(),
+            callUuid: functionCallMessage.uuid,
+            name: functionName,
+            response: uri,
+            createdAt: Date.now(),
+            type: 'functionResponse',
+          }
+
+          dispatch(addMessage(functionResponseMessage))
+          contentList.push(functionResponseMessage)
+        } else if (functionName === 'get_data_summary') {
+         // get all the data and create a summary
+
+
+        } else if (functionName === 'get_data_sample') {
+          // run the query and respond with the data
         }
         // If you add more tools, handle them similarly here
       }

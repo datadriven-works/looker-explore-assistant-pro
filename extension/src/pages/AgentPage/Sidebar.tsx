@@ -73,7 +73,7 @@ const Sidebar = ({ expanded, toggleDrawer }: SidebarProps) => {
       contents: [{ role: 'user', parts: [prompt] }],
       systemInstruction,
     })
-    console.log(response)
+
     if (response.length > 0 && response[0].text) {
       return response[0].text
     } else {
