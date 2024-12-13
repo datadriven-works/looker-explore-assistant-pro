@@ -8,7 +8,7 @@ export interface ExploreParams {
   vis_config?: any
   sorts?: string[]
   limit?: string
-
+  filter_expression?: string
 }
 
 export interface Setting {

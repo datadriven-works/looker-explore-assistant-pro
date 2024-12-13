@@ -100,6 +100,7 @@ export const ExploreEmbed = ({
         .appendTo(el)
         .withClassName('looker-embed')
         .withParams(paramsObj)
+        .withDynamicIFrameHeight()
         .on('explore:ready', () => handleQueryError())
         .on('drillmenu:click', canceller)
         .on('drillmodal:explore', canceller)
@@ -125,9 +126,9 @@ export const ExploreEmbed = ({
   }
 
   return (
-    <>
+    <div className="h-full w-full">
       <EmbedContainer id="embedcontainer" ref={ref} />
-    </>
+    </div>
   )
 }
 
@@ -137,6 +138,7 @@ const EmbedContainer = styled.div<{}>`
   height: 100%;
   animation: fadeIn ease-in ease-out 3s;
   > iframe {
+    min-height: 600px;
     width: 100%;
     height: 100%;
     display: block;

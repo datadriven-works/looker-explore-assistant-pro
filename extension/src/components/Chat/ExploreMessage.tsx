@@ -34,6 +34,8 @@ const ExploreMessage = ({ modelName, exploreId, prompt, exploreParams }: Explore
     dispatch(openSidePanel())
   }
 
+  console.log(exploreParams)
+
   return (
     <>
       <Message actor="system" createdAt={Date.now()}>

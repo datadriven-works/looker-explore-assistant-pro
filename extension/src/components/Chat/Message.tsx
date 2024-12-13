@@ -81,13 +81,13 @@ const Message = ({ message, actor, children }: MessageProps) => (
     <div className={`max-w-[70%] ${actor === 'user' ? 'order-2' : 'order-1'}`}>
       <div
         className={clsx(
-          'rounded-lg p-3 max-w-xl',
+          'rounded-lg p-3 max-w-xl overflow-hidden',
           actor === 'user'
             ? 'bg-[rgb(237,243,253)] text-gray-800'
             : 'bg-[rgb(242,242,242)] text-gray-800',
         )}
       >
-        {message && <MarkdownText text={message} />}
+        <div className="text-wrap break-words">{message && <MarkdownText text={message} />}</div>
         {children && <div>{children}</div>}
       </div>
     </div>

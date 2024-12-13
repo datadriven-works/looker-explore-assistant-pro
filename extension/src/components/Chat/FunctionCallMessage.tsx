@@ -1,15 +1,17 @@
 import React from 'react'
 import { FunctionCall } from '../../slices/assistantSlice'
 import Chip from '@mui/material/Chip'
-import Message from './Message'
+import clsx from 'clsx'
 
 const FunctionCallMessage = ({ message }: { message: FunctionCall }) => {
   return (
-    <Message actor="system" createdAt={Date.now()}>
-      <div className="flex flex-col">
-        <Chip label={message.name.replace(/_/g, ' ')} />
+    <div className={`flex justify-start mb-4`}>
+      <div className={`max-w-[70%]`}>
+        <div className={clsx('rounded-lg p-3 max-w-xl')}>
+          <Chip label={message.name.replace(/_/g, ' ')} />
+        </div>
       </div>
-    </Message>
+    </div>
   )
 }
 

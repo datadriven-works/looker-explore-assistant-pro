@@ -113,7 +113,7 @@ const processText = (text: string) => {
   return modifiedText
 }
 
-const MarkdownText = ({ text }: { text: string }) => {w
+const MarkdownText = ({ text }: { text: string }) => {
   return (
     <div
       dangerouslySetInnerHTML={{
