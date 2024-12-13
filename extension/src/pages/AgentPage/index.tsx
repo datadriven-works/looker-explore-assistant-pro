@@ -37,6 +37,7 @@ import {
 } from '@mui/material'
 import { getRelativeTimeString } from '../../utils/time'
 import { useGenerateContent } from '../../hooks/useGenerateContent'
+import { formatRow } from '../../hooks/useSendVertexMessage'
 
 const toCamelCase = (input: string): string => {
   // Remove underscores, make following letter uppercase
@@ -58,6 +59,7 @@ const generateHistory = (messages: ChatMessage[]) => {
 
       parts.push({
         functionCall: {
+          id: oneMessage.uuid,
           name: oneMessage.name,
           args: oneMessage.args || {},
         },
@@ -69,6 +71,7 @@ const generateHistory = (messages: ChatMessage[]) => {
       role = 'user'
       parts.push({
         functionResponse: {
+          id: oneMessage.callUuid,
           name: oneMessage.name,
           response: {
             name: oneMessage.name,
@@ -126,15 +129,17 @@ const AgentPage = () => {
   const getHistory = useCallback(() => {
     return generateHistory(currentExploreThread?.messages || [])
   }, [currentExploreThread?.messages])
-
   const submitMessage = useCallback(async () => {
     if (query === '') {
       return
     }
-
+  
     dispatch(setIsQuerying(true))
+  
+    const exploreKey = currentExploreThread?.exploreKey || currentExplore.exploreKey
+    const { dimensions, measures } = semanticModels[exploreKey]
 
-    // set the explore if it is not set
+    // Set the explore if it is not set
     if (!currentExploreThread?.modelName || !currentExploreThread?.exploreId) {
       dispatch(
         updateCurrentThread({
@@ -144,9 +149,9 @@ const AgentPage = () => {
         })
       )
     }
-
-    const contentList: any[] = [...(currentExploreThread?.messages || [] )]
-    console.log(contentList)
+  
+    const contentList: ChatMessage[] = [...(currentExploreThread?.messages || [])]
+  
     const initialMessage: TextMessage = {
       uuid: uuidv4(),
       message: query,
@@ -154,10 +159,10 @@ const AgentPage = () => {
       createdAt: Date.now(),
       type: 'text',
     }
-
+  
     dispatch(addMessage(initialMessage))
     contentList.push(initialMessage)
-
+  
     const tools = [
       {
         name: 'get_time',
@@ -173,26 +178,44 @@ const AgentPage = () => {
           },
         },
       },
-    ]
+    ]  
+    
 
-    const systemInstruction = 'You are a helpful assistant that is inside of Looker.'
 
-    const response = await generateContent({
-      contents: generateHistory(contentList),
-      tools,
-      systemInstruction,
-    })
+  
+    const systemInstruction = `You are a helpful assistant that is inside of Looker. Your job is to help me answer questions about this data set ${currentExploreThread?.exploreKey}. 
+    
+    Here are the dimensions and measures that are defined in this data set:
+     | Field Id | Field Type | LookML Type | Label | Description | Tags |
+     |------------|------------|-------------|-------|-------------|------|
+     ${dimensions.map(formatRow).join('\n')}
+     ${measures.map(formatRow).join('\n')}
+    
 
-    if (response.length > 0) {
-      // get the text from the response
+    Return text in markdown format.
+    `
+  
+    // We'll do up to 10 rounds of evaluation in case there are multiple function calls
+    const maxRounds = 3
+    let round = 0
+  
+    while (round < maxRounds) {
+      // Generate a response from the current conversation state
+      const response = await generateContent({
+        contents: generateHistory(contentList),
+        tools,
+        systemInstruction,
+      })
+  
+      // Process any textual responses
       let responseText = ''
       response.forEach((oneResponse: any) => {
         if (oneResponse.text) {
           responseText += oneResponse.text
         }
       })
-
-      if (responseText) {
+  
+      if (responseText && responseText.trim() !== '') {
         const textMessage: TextMessage = {
           uuid: uuidv4(),
           message: responseText,
@@ -203,64 +226,66 @@ const AgentPage = () => {
         dispatch(addMessage(textMessage))
         contentList.push(textMessage)
       }
-
-      // get any function calls from the response
+  
+      // Find function calls in the response
       const functionCalls = response.filter(
         (oneResponse: any) => oneResponse.functionCall !== undefined
       )
-      if (functionCalls.length > 0) {
-        functionCalls.forEach((oneFunctionCall: any) => {
-          const functionName = oneFunctionCall.functionCall.name
-          const functionArguments = oneFunctionCall.functionCall.arguments
-
-          const functionCallMessage: FunctionCall = {
-            uuid: uuidv4(),
-            name: functionName,
-            args: functionArguments,
-            createdAt: Date.now(),
-            type: 'functionCall',
-          }
-          dispatch(addMessage(functionCallMessage))
-          contentList.push(functionCallMessage)
-
-          if (functionName === 'get_time') {
-            const timeZone =
-              functionArguments?.time_zone ||
-              window.Intl.DateTimeFormat().resolvedOptions().timeZone
-            const time = new Date().toLocaleString('en-US', { timeZone })
-            const functionResponseMessage: FunctionResponse = {
-              uuid: uuidv4(),
-              name: functionName,
-              response: `The time in ${timeZone} is ${time}`,
-              createdAt: Date.now(),
-              type: 'functionResponse',
-            }
-            dispatch(addMessage(functionResponseMessage))
-            contentList.push(functionResponseMessage)
-          }
-        })
-
-        const response = await generateContent({
-          contents: generateHistory(contentList),
-          tools,
-          systemInstruction,
-        })
-
-        // re-evaluate the response
-
+  
+      if (functionCalls.length === 0) {
+        // No function calls, we can break out of the loop
+        break
       }
-    }
+  
+      // Handle all function calls
+      for (const oneFunctionCall of functionCalls) {
+        const functionName = oneFunctionCall.functionCall.name
+        const functionArguments = oneFunctionCall.functionCall.args
+  
+        const functionCallMessage: FunctionCall = {
+          uuid: uuidv4(),
+          name: functionName,
+          args: functionArguments,
+          createdAt: Date.now(),
+          type: 'functionCall',
+        }
+        dispatch(addMessage(functionCallMessage))
+        contentList.push(functionCallMessage)
+  
+        // Handle known tools here:
+        if (functionName === 'get_time') {
+          const timeZone =
+            functionArguments?.time_zone ||
+            window.Intl.DateTimeFormat().resolvedOptions().timeZone
+          const time = new Date().toLocaleString('en-US', { timeZone })
+          const functionResponseMessage: FunctionResponse = {
+            uuid: uuidv4(),
+            callUuid: functionCallMessage.uuid,
+            name: functionName,
+            response: `The time in ${timeZone} is ${time}`,
+            createdAt: Date.now(),
+            type: 'functionResponse',
+          }
+          dispatch(addMessage(functionResponseMessage))
+          contentList.push(functionResponseMessage)
+        }
+        // If you add more tools, handle them similarly here
+      }
 
+      // After handling function calls, loop again to let the model react to the function responses
+      round++
+    }
+  
     dispatch(setIsQuerying(false))
     dispatch(setQuery(''))
-
+  
     // scroll to bottom of message thread
     scrollIntoView()
-
+  
     // update the history with the current contents of the thread
     dispatch(updateLastHistoryEntry())
   }, [query, semanticModels, examples, currentExplore, currentExploreThread])
-
+  
   const isDataLoaded = isBigQueryMetadataLoaded && isSemanticModelLoaded
 
   useEffect(() => {

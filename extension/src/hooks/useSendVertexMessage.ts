@@ -15,7 +15,7 @@ import { ExploreParams } from '../slices/assistantSlice'
 import { ExploreFilterValidator, FieldType } from '../utils/ExploreFilterHelper'
 
 
-function formatRow(field: {
+export function formatRow(field: {
   name?: string
   type?: string
   label?: string

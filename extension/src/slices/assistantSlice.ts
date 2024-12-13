@@ -96,6 +96,7 @@ export interface FunctionCall {
 
 export interface FunctionResponse {
   uuid: string
+  callUuid: string
   name: string
   response: any
   createdAt: number

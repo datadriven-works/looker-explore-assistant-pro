@@ -14,7 +14,7 @@ const marked = new Marked(
       const language = hljs.getLanguage(lang) ? lang : 'markdown'
       return hljs.highlight(code, { language }).value
     },
-  }),
+  })
 )
 
 // Custom renderer to add Tailwind CSS classes
@@ -55,7 +55,6 @@ renderer.paragraph = ({ tokens }) => {
   return `<p class="mb-4">${renderer.parser.parseInline(tokens)}</p>`
 }
 
-
 renderer.list = (token: Tokens.List) => {
   const tag = token.ordered ? 'ol' : 'ul'
   const classes = 'list-inside mb-4 ' + (token.ordered ? 'list-decimal' : 'list-disc')
@@ -65,6 +64,37 @@ renderer.list = (token: Tokens.List) => {
 
 renderer.listitem = (token: Tokens.ListItem) => {
   return `<li class="mb-2">${renderer.parser.parseInline(token.tokens)}</li>`
+}
+
+renderer.table = (token: Tokens.Table) => {
+  let header = '';
+
+  // header
+  let cell = '';
+  for (let j = 0; j < token.header.length; j++) {
+    cell += renderer.tablecell(token.header[j]);
+  }
+  header += renderer.tablerow({ text: cell });
+
+  let body = '';
+  for (let j = 0; j < token.rows.length; j++) {
+    const row = token.rows[j];
+
+    cell = '';
+    for (let k = 0; k < row.length; k++) {
+      cell += renderer.tablecell(row[k]);
+    }
+
+    body += renderer.tablerow({ text: cell });
+  }
+  if (body) body = `<tbody>${body}</tbody>`;
+
+  return '<table class="table-auto">\n'
+    + '<thead>\n'
+    + header
+    + '</thead>\n'
+    + body
+    + '</table>\n';
 }
 
 const processText = (text: string) => {
