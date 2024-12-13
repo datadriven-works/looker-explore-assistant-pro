@@ -6,20 +6,21 @@ export const useGenerateContent = () => {
   const VERTEX_AI_ENDPOINT = process.env.VERTEX_AI_ENDPOINT || ''
   const VERTEX_CF_AUTH_TOKEN = process.env.VERTEX_CF_AUTH_TOKEN || ''
 
-  const sendMessage = async ({
-    message,
+  const generateContent = async ({
+    contents,
     parameters = {},
     responseSchema = null,
-    history = [],
     tools = [],
     modelName = 'gemini-2.0-flash-exp',
+    systemInstruction = '',
   }: {
-    message: string,
+    contents: any[],
     parameters?: ModelParameters,
     responseSchema?: any,
     history?: any[],
     tools?: any[],
     modelName?: string,
+    systemInstruction?: string,
   }) => {
 
     const defaultParameters = {
@@ -34,15 +35,14 @@ export const useGenerateContent = () => {
       Object.assign(defaultParameters, parameters)
     }
 
-    const contents = `The time is ${new Date().toISOString()} \n\n ${message}`
-
     const body = {
       model_name: modelName,
-      contents,
+      contents: '',
       parameters: parameters,
       response_schema: null,
-      history: history,
+      history: contents,
       tools: tools,
+      system_instruction: systemInstruction,
     }
 
     if (responseSchema) {
@@ -69,6 +69,6 @@ export const useGenerateContent = () => {
   }
 
   return {
-    sendMessage
+    generateContent
   }
 }

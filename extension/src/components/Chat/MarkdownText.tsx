@@ -1,5 +1,6 @@
 import React from 'react'
-import { Marked } from 'marked'
+import { Marked, Tokens } from 'marked'
+
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 // @ts-ignore
@@ -55,14 +56,15 @@ renderer.paragraph = ({ tokens }) => {
 }
 
 
-renderer.list = ({ ordered }) => {
-  const tag = ordered ? 'ol' : 'ul'
-  const classes = 'list-disc list-inside mb-4'
-  return `<${tag} class="${classes}">`
+renderer.list = (token: Tokens.List) => {
+  const tag = token.ordered ? 'ol' : 'ul'
+  const classes = 'list-inside mb-4 ' + (token.ordered ? 'list-decimal' : 'list-disc')
+  const body = token.items.map((item: any) => renderer.listitem(item)).join('')
+  return `<${tag} class="${classes}">${body}</${tag}>`
 }
 
-renderer.listitem = ({ tokens }) => {
-  return `<li class="mb-2">${renderer.parser.parseInline(tokens)}</li>`
+renderer.listitem = (token: Tokens.ListItem) => {
+  return `<li class="mb-2">${renderer.parser.parseInline(token.tokens)}</li>`
 }
 
 const processText = (text: string) => {

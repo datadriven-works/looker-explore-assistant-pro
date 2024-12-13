@@ -8,18 +8,20 @@ import SamplePrompts from '../../components/SamplePrompts'
 import { ExploreEmbed } from '../../components/ExploreEmbed'
 import { RootState } from '../../store'
 import { useDispatch, useSelector } from 'react-redux'
-import useSendVertexMessage from '../../hooks/useSendVertexMessage'
+
 import {
   addMessage,
   AssistantState,
   closeSidePanel,
-  openSidePanel,
   setCurrenExplore,
   setIsQuerying,
   setQuery,
-  setSidePanelExploreParams,
   updateCurrentThread,
   updateLastHistoryEntry,
+  ChatMessage,
+  TextMessage,
+  FunctionCall,
+  FunctionResponse,
 } from '../../slices/assistantSlice'
 import MessageThread from './MessageThread'
 import clsx from 'clsx'
@@ -38,10 +40,7 @@ import { useGenerateContent } from '../../hooks/useGenerateContent'
 
 const toCamelCase = (input: string): string => {
   // Remove underscores, make following letter uppercase
-  let result = input.replace(
-    /_([a-z])/g,
-    (_match, letter) => ' ' + letter.toUpperCase(),
-  )
+  let result = input.replace(/_([a-z])/g, (_match, letter) => ' ' + letter.toUpperCase())
 
   // Capitalize the first letter of the string
   result = result.charAt(0).toUpperCase() + result.slice(1)
@@ -49,11 +48,50 @@ const toCamelCase = (input: string): string => {
   return result
 }
 
+const generateHistory = (messages: ChatMessage[]) => {
+  const history: any[] = []
+  messages.forEach((oneMessage: ChatMessage) => {
+    const parts = []
+    let role = ''
+    if (oneMessage.type === 'functionCall') {
+      role = 'model'
+
+      parts.push({
+        functionCall: {
+          name: oneMessage.name,
+          args: oneMessage.args || {},
+        },
+      })
+    } else if (oneMessage.type === 'text') {
+      role = oneMessage.actor
+      parts.push(oneMessage.message)
+    } else if (oneMessage.type === 'functionResponse') {
+      role = 'user'
+      parts.push({
+        functionResponse: {
+          name: oneMessage.name,
+          response: {
+            name: oneMessage.name,
+            content: oneMessage.response,
+          },
+        },
+      })
+    }
+
+    history.push({
+      role,
+      parts,
+    })
+  })
+
+  return history
+}
+
 const AgentPage = () => {
   const endOfMessagesRef = useRef<HTMLDivElement>(null) // Ref for the last message
   const dispatch = useDispatch()
   const [expanded, setExpanded] = useState(false)
-  const { sendMessage } = useGenerateContent()
+  const { generateContent } = useGenerateContent()
 
   const {
     isChatMode,
@@ -85,27 +123,16 @@ const AgentPage = () => {
     scrollIntoView()
   }, [currentExploreThread, query, isQuerying])
 
+  const getHistory = useCallback(() => {
+    return generateHistory(currentExploreThread?.messages || [])
+  }, [currentExploreThread?.messages])
+
   const submitMessage = useCallback(async () => {
     if (query === '') {
       return
     }
 
     dispatch(setIsQuerying(true))
-
-    // update the prompt list
-    let promptList = [query]
-    if (currentExploreThread && currentExploreThread.promptList) {
-      promptList = [...currentExploreThread.promptList, query]
-    }
-
-    dispatch(
-      updateCurrentThread({
-        promptList,
-      }),
-    )
-
-    const exploreKey =
-      currentExploreThread?.exploreKey || currentExplore.exploreKey
 
     // set the explore if it is not set
     if (!currentExploreThread?.modelName || !currentExploreThread?.exploreId) {
@@ -114,42 +141,113 @@ const AgentPage = () => {
           exploreId: currentExplore.exploreId,
           modelName: currentExplore.modelName,
           exploreKey: currentExplore.exploreKey,
-        }),
+        })
       )
     }
 
-    dispatch(
-      addMessage({
-        uuid: uuidv4(),
-        message: query,
-        actor: 'user',
-        createdAt: Date.now(),
-        type: 'text',
-      }),
-    )
-
-    const response = await sendMessage({
+    const contentList: any[] = [...(currentExploreThread?.messages || [] )]
+    console.log(contentList)
+    const initialMessage: TextMessage = {
+      uuid: uuidv4(),
       message: query,
+      actor: 'user',
+      createdAt: Date.now(),
+      type: 'text',
+    }
+
+    dispatch(addMessage(initialMessage))
+    contentList.push(initialMessage)
+
+    const tools = [
+      {
+        name: 'get_time',
+        description: 'Get the current time',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            time_zone: {
+              type: 'STRING',
+              description:
+                'The time zone to get the time in. Use the IANA Time Zone Database format.',
+            },
+          },
+        },
+      },
+    ]
+
+    const systemInstruction = 'You are a helpful assistant that is inside of Looker.'
+
+    const response = await generateContent({
+      contents: generateHistory(contentList),
+      tools,
+      systemInstruction,
     })
 
-    if(response.length > 0) {
-
+    if (response.length > 0) {
       // get the text from the response
       let responseText = ''
       response.forEach((oneResponse: any) => {
-        if(oneResponse.text) {
+        if (oneResponse.text) {
           responseText += oneResponse.text
         }
       })
 
       if (responseText) {
-        dispatch(addMessage({
+        const textMessage: TextMessage = {
           uuid: uuidv4(),
           message: responseText,
-          actor: 'system',
+          actor: 'model',
           createdAt: Date.now(),
           type: 'text',
-        }))
+        }
+        dispatch(addMessage(textMessage))
+        contentList.push(textMessage)
+      }
+
+      // get any function calls from the response
+      const functionCalls = response.filter(
+        (oneResponse: any) => oneResponse.functionCall !== undefined
+      )
+      if (functionCalls.length > 0) {
+        functionCalls.forEach((oneFunctionCall: any) => {
+          const functionName = oneFunctionCall.functionCall.name
+          const functionArguments = oneFunctionCall.functionCall.arguments
+
+          const functionCallMessage: FunctionCall = {
+            uuid: uuidv4(),
+            name: functionName,
+            args: functionArguments,
+            createdAt: Date.now(),
+            type: 'functionCall',
+          }
+          dispatch(addMessage(functionCallMessage))
+          contentList.push(functionCallMessage)
+
+          if (functionName === 'get_time') {
+            const timeZone =
+              functionArguments?.time_zone ||
+              window.Intl.DateTimeFormat().resolvedOptions().timeZone
+            const time = new Date().toLocaleString('en-US', { timeZone })
+            const functionResponseMessage: FunctionResponse = {
+              uuid: uuidv4(),
+              name: functionName,
+              response: `The time in ${timeZone} is ${time}`,
+              createdAt: Date.now(),
+              type: 'functionResponse',
+            }
+            dispatch(addMessage(functionResponseMessage))
+            contentList.push(functionResponseMessage)
+          }
+        })
+
+        const response = await generateContent({
+          contents: generateHistory(contentList),
+          tools,
+          systemInstruction,
+        })
+
+        // re-evaluate the response
+
       }
     }
 
@@ -186,7 +284,7 @@ const AgentPage = () => {
         modelName,
         exploreId,
         exploreKey,
-      }),
+      })
     )
   }
 
@@ -201,9 +299,7 @@ const AgentPage = () => {
               Hello.
             </span>
           </h1>
-          <h1 className="text-3xl text-gray-400">
-            Getting everything ready...
-          </h1>
+          <h1 className="text-3xl text-gray-400">Getting everything ready...</h1>
           <div className="max-w-2xl text-blue-300">
             <LinearProgress color="inherit" />
           </div>
@@ -265,7 +361,7 @@ const AgentPage = () => {
                       {getRelativeTimeString(
                         currentExploreThread?.createdAt
                           ? new Date(currentExploreThread.createdAt)
-                          : new Date(),
+                          : new Date()
                       )}
                       )
                     </div>
@@ -279,7 +375,7 @@ const AgentPage = () => {
               <div
                 className={clsx(
                   'flex flex-col relative',
-                  sidePanel.isSidePanelOpen ? 'w-2/5' : 'w-full',
+                  sidePanel.isSidePanelOpen ? 'w-2/5' : 'w-full'
                 )}
               >
                 <div className="flex-grow overflow-y-auto max-h-full mb-36 ">
@@ -299,7 +395,7 @@ const AgentPage = () => {
                   'flex-grow flex flex-col pb-2 pl-2 pt-8 transition-all duration-300 ease-in-out transform max-w-0',
                   sidePanel.isSidePanelOpen
                     ? 'max-w-full translate-x-0 opacity-100'
-                    : 'translate-x-full opacity-0',
+                    : 'translate-x-full opacity-0'
                 )}
               >
                 <div className="flex flex-row bg-gray-400 text-white rounded-t-lg px-4 py-2 text-sm">
@@ -333,9 +429,7 @@ const AgentPage = () => {
                     Hello.
                   </span>
                 </h1>
-                <h1 className="text-5xl text-gray-400">
-                  How can I help you today?
-                </h1>
+                <h1 className="text-5xl text-gray-400">How can I help you today?</h1>
               </div>
 
               <div className="flex flex-col max-w-3xl m-auto mt-16">
@@ -349,10 +443,7 @@ const AgentPage = () => {
                         onChange={handleExploreChange}
                       >
                         {explores.map((oneExplore) => (
-                          <MenuItem
-                            key={oneExplore.exploreKey}
-                            value={oneExplore.exploreKey}
-                          >
+                          <MenuItem key={oneExplore.exploreKey} value={oneExplore.exploreKey}>
                             {toCamelCase(oneExplore.exploreId)}
                           </MenuItem>
                         ))}

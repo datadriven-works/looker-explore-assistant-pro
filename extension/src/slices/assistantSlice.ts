@@ -54,7 +54,7 @@ interface Sample {
 export interface Message {
   uuid: string
   message: string
-  actor: 'user' | 'system'
+  actor: 'user' | 'model'
   createdAt: number
   type: 'text'
   intent?: 'exploreRefinement' | 'summarize' | 'dataQuestion'
@@ -63,30 +63,46 @@ export interface Message {
 export interface ExploreMessage {
   uuid: string
   exploreParams: ExploreParams
-  actor: 'system'
+  actor: 'model'
   createdAt: number
-  type: 'explore'
   summarizedPrompt: string
+  type: 'explore'
 }
 
 export interface SummarizeMesage {
   uuid: string
   exploreParams: ExploreParams
-  actor: 'system'
+  actor: 'model'
   createdAt: number
-  type: 'summarize'
   summary: string
+  type: 'summarize'
 }
 
 export interface TextMessage {
   uuid: string
-  actor: 'user' | 'system'
+  actor: 'user' | 'model'
   createdAt: number
   message: string
   type: 'text'
 }
 
-export type ChatMessage = Message | ExploreMessage | SummarizeMesage | TextMessage
+export interface FunctionCall {
+  uuid: string
+  name: string
+  args: any
+  createdAt: number
+  type: 'functionCall'
+}
+
+export interface FunctionResponse {
+  uuid: string
+  name: string
+  response: any
+  createdAt: number
+  type: 'functionResponse'
+}
+
+export type ChatMessage = Message | ExploreMessage | SummarizeMesage | TextMessage | FunctionCall | FunctionResponse
 
 export type ExploreThread = {
   uuid: string
@@ -363,6 +379,8 @@ export const {
   resetSettings,
 
   updateSummaryMessage,
+
+  addFunctionCall,
 
   setCurrenExplore,
 

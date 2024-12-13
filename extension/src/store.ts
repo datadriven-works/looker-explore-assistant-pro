@@ -17,7 +17,8 @@ const neverPersistKeys: (keyof AssistantState)[] = [
   'isSemanticModelLoaded',
   'currentExploreThread',
   'isChatMode',
-  'query'
+  'isQuerying',
+  'query',
 ]
 
 // Create a transform function to filter out specific keys

@@ -6,6 +6,7 @@ import ExploreMessage from '../../components/Chat/ExploreMessage'
 import SummaryMessage from '../../components/Chat/SummaryMessage'
 import { AssistantState, ChatMessage } from '../../slices/assistantSlice'
 import CircularProgress from '@mui/material/CircularProgress'
+import FunctionCallMessage from '../../components/Chat/FunctionCallMessage'
 
 interface MessageThreadProps {
   endOfMessageRef: React.RefObject<HTMLDivElement>
@@ -48,7 +49,11 @@ const MessageThread = ({ endOfMessageRef }: MessageThreadProps) => {
           )
         } else if (message.type === 'summarize') {
           return <SummaryMessage key={message.uuid} message={message}  onSummaryComplete={handleSummaryComplete}/>
-        } else {
+        } else if (message.type === 'functionCall') {
+          return <FunctionCallMessage key={message.uuid} message={message} />
+        } else if (message.type === 'functionResponse') {
+          return <div key={message.uuid}></div>
+        } else if (message.type == 'text') {
           return (
             <Message
               key={message.uuid}
