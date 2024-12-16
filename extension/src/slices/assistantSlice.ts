@@ -51,24 +51,6 @@ interface Sample {
   prompt: string
 }
 
-export interface ExploreMessage {
-  uuid: string
-  exploreParams: ExploreParams
-  actor: 'model'
-  createdAt: number
-  summarizedPrompt: string
-  type: 'explore'
-}
-
-export interface SummarizeMesage {
-  uuid: string
-  exploreParams: ExploreParams
-  actor: 'model'
-  createdAt: number
-  summary: string
-  type: 'summarize'
-}
-
 export interface TextMessage {
   uuid: string
   actor: 'user' | 'model'
@@ -94,7 +76,7 @@ export interface FunctionResponse {
   type: 'functionResponse'
 }
 
-export type ChatMessage = ExploreMessage | SummarizeMesage | TextMessage | FunctionCall | FunctionResponse
+export type ChatMessage = TextMessage | FunctionCall | FunctionResponse
 
 export type ExploreThread = {
   uuid: string
@@ -306,19 +288,6 @@ export const assistantSlice = createSlice({
     ) {
       state.examples.exploreRefinementExamples = action.payload
     },
-    updateSummaryMessage: (
-      state,
-      action: PayloadAction<{ uuid: string; summary: string }>,
-    ) => {
-      const { uuid, summary } = action.payload
-      if (state.currentExploreThread === null) {
-        state.currentExploreThread = newThreadState()
-      }
-      const message = state.currentExploreThread.messages.find(
-        (message) => message.uuid === uuid,
-      ) as SummarizeMesage
-      message.summary = summary
-    },
     setExploreSamples(
       state,
       action: PayloadAction<ExploreSamples>,
@@ -382,7 +351,6 @@ export const {
   setSetting,
   resetSettings,
 
-  updateSummaryMessage,
   updateSummarizedPrompt,
   setCurrenExplore,
 

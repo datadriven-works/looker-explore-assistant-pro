@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { IconButton, LinearProgress, Tooltip } from '@mui/material'
+import { IconButton, Tooltip } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
@@ -8,11 +8,9 @@ import { useDispatch, useSelector } from 'react-redux'
 import {
   clearHistory,
   ExploreThread,
-  openSidePanel,
   resetChat,
   setCurrentThread,
   setIsChatMode,
-  setSidePanelExploreParams,
   AssistantState,
   updateSummarizedPrompt,
 } from '../../slices/assistantSlice'

@@ -115,7 +115,7 @@ export const ExploreEmbed = ({
         .then((explore) => setExploreLoading(explore))
         .catch((error: Error) => {
           // @TODO - This should probably throw a visible error
-          // eslint-disable-next-line no-console
+           
           console.error('Connection error', error)
         })
     }

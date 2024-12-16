@@ -37,7 +37,7 @@ import {
 } from '@mui/material'
 import { getRelativeTimeString } from '../../utils/time'
 import { useGenerateContent } from '../../hooks/useGenerateContent'
-import { formatRow } from '../../hooks/useSendVertexMessage'
+import { formatRow } from '../../hooks/useGenerateContent'
 import { ExploreHelper } from '../../utils/ExploreHelper'
 import { ExtensionContext } from '@looker/extension-sdk-react'
 

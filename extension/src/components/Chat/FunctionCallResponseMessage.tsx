@@ -1,7 +1,5 @@
 import React from 'react'
 import { FunctionResponse } from '../../slices/assistantSlice'
-import Chip from '@mui/material/Chip'
-import Message from './Message'
 import { ExploreEmbed } from '../ExploreEmbed'
 
 const ExploreQueryMessage = ({ message }: { message: FunctionResponse }) => {

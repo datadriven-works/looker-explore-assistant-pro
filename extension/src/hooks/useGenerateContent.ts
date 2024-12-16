@@ -1,14 +1,35 @@
 import { ModelParameters } from '../utils/VertexHelper'
 import CryptoJS from 'crypto-js'
-import { formatRow } from './useSendVertexMessage'
 import { ExploreExamples } from '../slices/assistantSlice'
 import looker_filter_doc from '../documents/looker_filter_doc.md'
 import looker_visualization_doc from '../documents/looker_visualization_doc.md'
 import looker_query_body from '../documents/looker_query_body.md'
+
+
+export function formatRow(field: {
+  name?: string
+  type?: string
+  label?: string
+  description?: string
+  tags?: string[]
+}) {
+  // Initialize properties with default values if not provided
+  const name = field.name || ''
+  const type = field.type || ''
+  const label = field.label || ''
+  const description = field.description || ''
+  const tags = field.tags ? field.tags.join(', ') : ''
+
+  // Return a markdown row
+  return `| ${name} | ${type} | ${label} | ${description} | ${tags} |`
+}
+
+
 export const useGenerateContent = () => {
   // cloud function
   const VERTEX_AI_ENDPOINT = process.env.VERTEX_AI_ENDPOINT || ''
   const VERTEX_CF_AUTH_TOKEN = process.env.VERTEX_CF_AUTH_TOKEN || ''
+
 
   const summarizeData = async (data: string) => {
     console.log('data', data)

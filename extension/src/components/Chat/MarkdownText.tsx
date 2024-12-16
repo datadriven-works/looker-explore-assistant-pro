@@ -3,8 +3,6 @@ import { Marked, Tokens } from 'marked'
 
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
-// @ts-ignore
-import hlsjLookML from 'highlightjs-lookml'
 import 'highlight.js/styles/github.css'
 
 const marked = new Marked(
