@@ -136,10 +136,14 @@ const processText = (text: string) => {
 }
 
 const MarkdownText = ({ text }: { text: string }) => {
+
+  // the text might be wrapped in ```markdown```
+  const markdownText = text.replace(/^```markdown\s*\n/, '').replace(/\n```$/, '')
+
   return (
     <div
       dangerouslySetInnerHTML={{
-        __html: processText(text),
+        __html: processText(markdownText),
       }}
     />
   )
