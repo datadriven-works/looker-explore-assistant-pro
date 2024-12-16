@@ -34,6 +34,11 @@ export const useGenerateContent = () => {
     * pivots - figure out which fields need to be pivoted by
     * sorts - figure out which fields need to be sorted by
     * vis_config - figure out which visualization needs to be applied
+    
+
+    You ABSOLUTELY MUST NOT include any fields that are not defined in the semantic model. 
+
+    You ABSOLUTELY MUST use the filters and filter_expression fields to filter the data. Almost every question will require a filter.
     `
 
     const backgroundInformation = `
@@ -76,7 +81,11 @@ export const useGenerateContent = () => {
       },
       {
         role: 'user',
-        parts: [`Generate the query body that answers the request: ${prompt}`],
+        parts: [`Here are some examples of how to use filters in Looker: ${examples}`],
+      },
+      {
+        role: 'user',
+        parts: [`Generate the query body that answers the request: \n\n\n ${prompt}`],
       },
     ]
 
@@ -90,18 +99,50 @@ export const useGenerateContent = () => {
           items: { type: 'STRING' },
           description: 'Fields to pivot by. They must also be in the fields array.',
         },
-        filter_expression: { type: 'STRING', description: 'A filter expression to apply to the explore. This is a SQL-like expression that will be used to filter the data in the explore.' },
         row_total: { type: 'STRING', description: 'Raw Total', default: '' },
         vis_config: {
           type: 'OBJECT',
-          description: 'Visualization configuration properties in JSON format',
+          description:
+            'Visualization configuration properties. These properties are typically opaque and differ based on the type of visualization used. There is no specified set of allowed keys. The values can be any type supported by JSON. A "type" key with a string value is often present, and is used by Looker to determine which visualization to present. Visualizations ignore unknown vis_config properties.',
+          properties: {
+            type: {
+              type: 'STRING',
+              description: 'The type of visualization to use',
+              enum: [
+                'looker_column',
+                'looker_bar',
+                'looker_scatter',
+                'looker_line',
+                'looker_area',
+                'looker_pie',
+                'looker_donut_multiples',
+                'looker_google_map',
+                'looker_grid',
+              ],
+            },
+          },
+          additionalProperties: {
+            type: 'STRING',
+          },
+          required: ['type'],
         },
         fields: { type: 'ARRAY', items: { type: 'STRING' }, default: [] },
-        filters: { type: 'OBJECT', description: 'The filters to apply to the explore. The keys are the dimensions and measures defined in the semantic model. The values are the filter values. Use the documentation how to use filters in Looker.' },
+        filters: {
+          type: 'ARRAY',
+          description:
+            'The filters to apply to the explore. The keys are the dimensions and measures defined in the semantic model. The values are the filter values. Use the documentation how to use filters in Looker.',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              field: { type: 'STRING', description: 'The dimension or measure id to filter on' },
+              value: { type: 'STRING', description: 'The value to filter on' },
+            },
+          },
+        },
         sorts: { type: 'ARRAY', items: { type: 'STRING' }, default: [] },
         limit: { type: 'INTEGER', default: 500 },
       },
-      required: ['model', 'view', 'fields', 'filters', 'limit', 'vis_config']
+      required: ['model', 'view', 'fields', 'filters', 'limit', 'vis_config'],
     }
 
     const response = await generateContent({
@@ -109,10 +150,17 @@ export const useGenerateContent = () => {
       systemInstruction,
       responseSchema,
     })
-    console.log('Generate Explore Query Response', response)
+
     const exploreDefinition = response[0]['object']
     exploreDefinition['model'] = modelName
     exploreDefinition['view'] = exploreId
+
+    // fix the filters to be a dictionary instead of an array
+    exploreDefinition['filters'] = exploreDefinition['filters'].reduce((acc: any, filter: any) => {
+      acc[filter['field']] = filter['value']
+      return acc
+    }, {})
+
     return exploreDefinition
   }
 

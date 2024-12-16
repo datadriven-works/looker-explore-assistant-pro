@@ -87,6 +87,7 @@ export const ExploreEmbed = ({
         paramsObj['toggle'] = 'pik,vis'
       }
 
+      console.log('Explore Params for embed', exploreParams)
       const encodedParams = ExploreHelper.encodeExploreParams(exploreParams)
       for (const key in encodedParams) {
         paramsObj[key] = encodedParams[key]

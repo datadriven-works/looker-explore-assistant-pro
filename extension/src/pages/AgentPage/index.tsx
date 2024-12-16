@@ -349,7 +349,7 @@ const AgentPage = () => {
             measures,
             examples: examples.exploreGenerationExamples,
           })
-          console.log('response', response)
+          console.log('Explore Query Response', response)
           const functionResponseMessage: FunctionResponse = {
             uuid: uuidv4(),
             callUuid: functionCallMessage.uuid,

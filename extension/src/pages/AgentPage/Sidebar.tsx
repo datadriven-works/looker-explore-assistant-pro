@@ -58,8 +58,6 @@ const Sidebar = ({ expanded, toggleDrawer }: SidebarProps) => {
     dispatch(resetChat())
     dispatch(setCurrentThread(thread))
     dispatch(setIsChatMode(true))
-    dispatch(setSidePanelExploreParams(thread.exploreParams))
-    dispatch(openSidePanel())
   }
 
   const handleClearHistory = () => {
