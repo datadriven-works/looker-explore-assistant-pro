@@ -87,6 +87,7 @@ export const ExploreEmbed = ({
         paramsObj['toggle'] = 'pik,vis'
       }
 
+      console.log('Explore Params for embed', exploreParams)
       const encodedParams = ExploreHelper.encodeExploreParams(exploreParams)
       for (const key in encodedParams) {
         paramsObj[key] = encodedParams[key]
@@ -100,6 +101,7 @@ export const ExploreEmbed = ({
         .appendTo(el)
         .withClassName('looker-embed')
         .withParams(paramsObj)
+        .withDynamicIFrameHeight()
         .on('explore:ready', () => handleQueryError())
         .on('drillmenu:click', canceller)
         .on('drillmodal:explore', canceller)
@@ -113,7 +115,7 @@ export const ExploreEmbed = ({
         .then((explore) => setExploreLoading(explore))
         .catch((error: Error) => {
           // @TODO - This should probably throw a visible error
-          // eslint-disable-next-line no-console
+           
           console.error('Connection error', error)
         })
     }
@@ -125,9 +127,9 @@ export const ExploreEmbed = ({
   }
 
   return (
-    <>
+    <div className="h-full w-full">
       <EmbedContainer id="embedcontainer" ref={ref} />
-    </>
+    </div>
   )
 }
 
@@ -137,6 +139,7 @@ const EmbedContainer = styled.div<{}>`
   height: 100%;
   animation: fadeIn ease-in ease-out 3s;
   > iframe {
+    min-height: 600px;
     width: 100%;
     height: 100%;
     display: block;

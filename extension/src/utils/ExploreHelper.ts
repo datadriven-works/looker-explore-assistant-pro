@@ -1,6 +1,12 @@
+import { Looker40SDK } from '@looker/sdk'
 import { ExploreParams } from '../slices/assistantSlice'
 
 export class ExploreHelper {
+
+  static getData = async (requestBody: any, core40SDK: Looker40SDK): Promise<string> => {
+    const data = await core40SDK.ok(core40SDK.run_inline_query({ result_format: 'md', body: requestBody }))
+    return data
+  }
 
   static exploreQueryArgumentString = (exploreParams: ExploreParams): string => {
     const encodedParams = ExploreHelper.encodeExploreParams(exploreParams)
@@ -14,7 +20,7 @@ export class ExploreHelper {
       return {}
     }
 
-    const { fields, filters, sorts, limit, pivots, vis_config } = exploreParams
+    const { fields, filters, sorts, limit, pivots, vis_config, filter_expression } = exploreParams
 
     const fieldsString = fields?.join(',') || ''
 
@@ -26,6 +32,7 @@ export class ExploreHelper {
 
     const pivotsString = pivots?.join(',') || ''
     const visString = vis_config ? JSON.stringify(vis_config) : ''
+    const filterExpressionString = filter_expression ? filter_expression : ''
 
     const encodedParams: { [key: string]: string } = {
       fields: fieldsString,
@@ -33,6 +40,7 @@ export class ExploreHelper {
       limit: limitString,
       pivots: pivotsString,
       vis: visString,
+      filter_expression: filterExpressionString,
     }
 
     if (filters) {

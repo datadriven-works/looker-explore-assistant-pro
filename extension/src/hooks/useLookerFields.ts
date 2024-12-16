@@ -95,7 +95,7 @@ export const useLookerFields = () => {
         }
       } catch (error) {
         showBoundary({
-          message: `Failed to fetch semantic model for ${modelName}::${exploreId}`,
+          message: `Failed to fetch semantic model for ${modelName}::${exploreId} ${error}`,
         })
         return undefined
       }
@@ -123,7 +123,7 @@ export const useLookerFields = () => {
         dispatch(setIsSemanticModelLoaded(true))
       } catch (error) {
         showBoundary({
-          message: 'Failed to load semantic models',
+          message: `Failed to load semantic models, ${error}`,
         })
       }
     }

@@ -8,7 +8,7 @@ export interface ExploreParams {
   vis_config?: any
   sorts?: string[]
   limit?: string
-
+  filter_expression?: string
 }
 
 export interface Setting {
@@ -51,34 +51,32 @@ interface Sample {
   prompt: string
 }
 
-export interface Message {
+export interface TextMessage {
   uuid: string
+  actor: 'user' | 'model'
+  createdAt: number
   message: string
-  actor: 'user' | 'system'
-  createdAt: number
   type: 'text'
-  intent?: 'exploreRefinement' | 'summarize' | 'dataQuestion'
 }
 
-export interface ExploreMessage {
+export interface FunctionCall {
   uuid: string
-  exploreParams: ExploreParams
-  actor: 'system'
+  name: string
+  args: any
   createdAt: number
-  type: 'explore'
-  summarizedPrompt: string
+  type: 'functionCall'
 }
 
-export interface SummarizeMesage {
+export interface FunctionResponse {
   uuid: string
-  exploreParams: ExploreParams
-  actor: 'system'
+  callUuid: string
+  name: string
+  response: any
   createdAt: number
-  type: 'summarize'
-  summary: string
+  type: 'functionResponse'
 }
 
-export type ChatMessage = Message | ExploreMessage | SummarizeMesage
+export type ChatMessage = TextMessage | FunctionCall | FunctionResponse
 
 export type ExploreThread = {
   uuid: string
@@ -290,19 +288,6 @@ export const assistantSlice = createSlice({
     ) {
       state.examples.exploreRefinementExamples = action.payload
     },
-    updateSummaryMessage: (
-      state,
-      action: PayloadAction<{ uuid: string; summary: string }>,
-    ) => {
-      const { uuid, summary } = action.payload
-      if (state.currentExploreThread === null) {
-        state.currentExploreThread = newThreadState()
-      }
-      const message = state.currentExploreThread.messages.find(
-        (message) => message.uuid === uuid,
-      ) as SummarizeMesage
-      message.summary = summary
-    },
     setExploreSamples(
       state,
       action: PayloadAction<ExploreSamples>,
@@ -320,6 +305,18 @@ export const assistantSlice = createSlice({
     },
     setCurrenExplore: (state, action: PayloadAction<AssistantState['currentExplore']>) => {
       state.currentExplore = action.payload
+    },
+    updateSummarizedPrompt: (state, action: PayloadAction<{ uuid: string; summary: string }>) => {
+      const { uuid, summary } = action.payload
+      state.history = state.history.map((thread) => {
+        if (thread.uuid === uuid) {
+          return {
+            ...thread,
+            summarizedPrompt: summary
+          }
+        }
+        return thread
+      })
     }
   },
 })
@@ -354,8 +351,7 @@ export const {
   setSetting,
   resetSettings,
 
-  updateSummaryMessage,
-
+  updateSummarizedPrompt,
   setCurrenExplore,
 
   resetExploreAssistant,

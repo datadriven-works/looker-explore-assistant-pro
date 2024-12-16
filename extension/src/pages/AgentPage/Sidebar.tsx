@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { IconButton, Tooltip } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -8,15 +8,15 @@ import { useDispatch, useSelector } from 'react-redux'
 import {
   clearHistory,
   ExploreThread,
-  openSidePanel,
   resetChat,
   setCurrentThread,
   setIsChatMode,
-  setSidePanelExploreParams,
   AssistantState,
+  updateSummarizedPrompt,
 } from '../../slices/assistantSlice'
 import { RootState } from '../../store'
 import SettingsModal from './Settings'
+import { useGenerateContent } from '../../hooks/useGenerateContent'
 
 interface SidebarProps {
   expanded: boolean
@@ -30,6 +30,7 @@ const Sidebar = ({ expanded, toggleDrawer }: SidebarProps) => {
   const { isChatMode, isQuerying, history } = useSelector(
     (state: RootState) => state.assistant as AssistantState,
   )
+  const { generateContent } = useGenerateContent()
 
   const handleClick = () => {
     if (expanded) {
@@ -55,13 +56,44 @@ const Sidebar = ({ expanded, toggleDrawer }: SidebarProps) => {
     dispatch(resetChat())
     dispatch(setCurrentThread(thread))
     dispatch(setIsChatMode(true))
-    dispatch(setSidePanelExploreParams(thread.exploreParams))
-    dispatch(openSidePanel())
   }
 
   const handleClearHistory = () => {
     dispatch(clearHistory())
   }
+
+  const makeSummary = async (prompt: string) => {
+    const systemInstruction = `You are a helpful assistant that summarizes conversations. You are given a conversation and you need to summarize it in a very short way. Keep responses under 100 characters`
+
+    const response = await generateContent({
+      contents: [{ role: 'user', parts: [prompt] }],
+      systemInstruction,
+    })
+
+    if (response.length > 0 && response[0].text) {
+      return response[0].text
+    } else {
+      return ''
+    }
+  }
+
+  useEffect(() => {
+    history.forEach((item) => {
+      if (item.summarizedPrompt) {
+        return
+      }
+
+      const textMessages = item.messages.filter((message) => message.type === 'text').map((message) => `${message.actor}: ${message.message}`).join('\n')
+      const prompt = `Create a very short summary of the following conversation so far.
+
+      ${textMessages}
+      `
+
+      makeSummary(prompt).then((summary) => {
+        dispatch(updateSummarizedPrompt({ uuid: item.uuid, summary: summary }))
+      })
+    })
+  }, [history])
 
   const reverseHistory = [...history].reverse() as ExploreThread[]
 
@@ -152,7 +184,13 @@ const Sidebar = ({ expanded, toggleDrawer }: SidebarProps) => {
                         />
                       </div>
                       <div className="line-clamp-1">
-                        <span className="ml-3">{item.summarizedPrompt}</span>
+                        {item.summarizedPrompt ? (
+                          <span className="ml-3">{item.summarizedPrompt}</span>
+                        ) : (
+                          <>
+                            <span className="ml-3">...</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </Tooltip>

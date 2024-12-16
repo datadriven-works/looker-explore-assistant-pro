@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '../../store'
 import { setIsChatMode, setQuery } from '../../slices/assistantSlice'
@@ -8,7 +8,7 @@ import SendIcon from '@mui/icons-material/Send'
 const PromptInput = () => {
   const dispatch = useDispatch()
   const [inputText, setInputText] = useState('')
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   const { isQuerying } = useSelector((state: RootState) => state.assistant)
 
@@ -33,6 +33,13 @@ const PromptInput = () => {
       handleSubmit()
     }
   }
+
+  useEffect(() => {
+    if (!isQuerying && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [isQuerying])
+  
   return (
     <div className="max-w-3xl mx-auto px-8 pt-4 pb-2 bg-white bg-opacity-80 rounded-md">
       <div className="relative flex items-center bg-[rgb(240,244,249)] rounded-full p-2">
