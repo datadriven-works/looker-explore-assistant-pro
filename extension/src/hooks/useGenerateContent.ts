@@ -10,6 +10,19 @@ export const useGenerateContent = () => {
   const VERTEX_AI_ENDPOINT = process.env.VERTEX_AI_ENDPOINT || ''
   const VERTEX_CF_AUTH_TOKEN = process.env.VERTEX_CF_AUTH_TOKEN || ''
 
+  const summarizeData = async (data: string) => {
+    console.log('data', data)
+    const systemInstruction = `You are a helpful assistant that summarizes the data. The data is in markdown format.`
+    const prompt = `Make a summary of this data for a slide presentation. The summary should be a markdown documents that contains a list of sections, each section should have the following details:  a section title, which is the title for the given part of the summary, and key points which a list of key points for the concise summary. Data should be returned in each section, you will be penalized if it doesn't adhere to this format. Each summary should only be included once. Do not include the same summary twice.
+    `
+    const response = await generateContent({
+      contents: [{ role: 'user', parts: [data] }, { role: 'user', parts: [prompt] }],
+      systemInstruction,
+    })
+
+    return response
+  }
+
   const generateExploreQuery = async ({
     userRequest,
     modelName,
@@ -228,5 +241,6 @@ export const useGenerateContent = () => {
   return {
     generateContent,
     generateExploreQuery,
+    summarizeData,
   }
 }

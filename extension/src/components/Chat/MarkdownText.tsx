@@ -62,39 +62,63 @@ renderer.list = (token: Tokens.List) => {
   return `<${tag} class="${classes}">${body}</${tag}>`
 }
 
-renderer.listitem = (token: Tokens.ListItem) => {
-  return `<li class="mb-2">${renderer.parser.parseInline(token.tokens)}</li>`
+renderer.listitem = (item: Tokens.ListItem) => {
+  let itemBody = ''
+  if (item.task) {
+    const checkbox = renderer.checkbox({ checked: !!item.checked })
+    if (item.loose) {
+      if (item.tokens[0]?.type === 'paragraph') {
+        item.tokens[0].text = checkbox + ' ' + item.tokens[0].text
+        if (
+          item.tokens[0].tokens &&
+          item.tokens[0].tokens.length > 0 &&
+          item.tokens[0].tokens[0].type === 'text'
+        ) {
+          item.tokens[0].tokens[0].text = checkbox + ' ' + escape(item.tokens[0].tokens[0].text)
+          item.tokens[0].tokens[0].escaped = true
+        }
+      } else {
+        item.tokens.unshift({
+          type: 'text',
+          raw: checkbox + ' ',
+          text: checkbox + ' ',
+          escaped: true,
+        })
+      }
+    } else {
+      itemBody += checkbox + ' '
+    }
+  }
+
+  itemBody += renderer.parser.parse(item.tokens, !!item.loose)
+
+  return `<li class="mb-2">${itemBody}</li>\n`
 }
 
 renderer.table = (token: Tokens.Table) => {
-  let header = '';
+  let header = ''
 
   // header
-  let cell = '';
+  let cell = ''
   for (let j = 0; j < token.header.length; j++) {
-    cell += renderer.tablecell(token.header[j]);
+    cell += renderer.tablecell(token.header[j])
   }
-  header += renderer.tablerow({ text: cell });
+  header += renderer.tablerow({ text: cell })
 
-  let body = '';
+  let body = ''
   for (let j = 0; j < token.rows.length; j++) {
-    const row = token.rows[j];
+    const row = token.rows[j]
 
-    cell = '';
+    cell = ''
     for (let k = 0; k < row.length; k++) {
-      cell += renderer.tablecell(row[k]);
+      cell += renderer.tablecell(row[k])
     }
 
-    body += renderer.tablerow({ text: cell });
+    body += renderer.tablerow({ text: cell })
   }
-  if (body) body = `<tbody>${body}</tbody>`;
+  if (body) body = `<tbody>${body}</tbody>`
 
-  return '<table class="table-auto">\n'
-    + '<thead>\n'
-    + header
-    + '</thead>\n'
-    + body
-    + '</table>\n';
+  return '<table class="table-auto">\n' + '<thead>\n' + header + '</thead>\n' + body + '</table>\n'
 }
 
 renderer.link = ({ href, title, text }: Tokens.Link) => {

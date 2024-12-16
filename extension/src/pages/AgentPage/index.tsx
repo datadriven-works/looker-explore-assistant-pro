@@ -108,8 +108,8 @@ const AgentPage = () => {
   const endOfMessagesRef = useRef<HTMLDivElement>(null) // Ref for the last message
   const dispatch = useDispatch()
   const [expanded, setExpanded] = useState(false)
-  const { generateContent, generateExploreQuery } = useGenerateContent()
-  const { extensionSDK } = useContext(ExtensionContext)
+  const { generateContent, generateExploreQuery, summarizeData } = useGenerateContent()
+  const { extensionSDK, core40SDK } = useContext(ExtensionContext)
   const hostUrl = extensionSDK.lookerHostData?.hostUrl
   const hostName = hostUrl ? new URL(hostUrl).hostname : ''
 
@@ -143,9 +143,7 @@ const AgentPage = () => {
     scrollIntoView()
   }, [currentExploreThread, query, isQuerying])
 
-  const getHistory = useCallback(() => {
-    return generateHistory(currentExploreThread?.messages || [])
-  }, [currentExploreThread?.messages])
+
   const submitMessage = useCallback(async () => {
     if (query === '') {
       return
@@ -225,8 +223,8 @@ const AgentPage = () => {
         },
       },
       {
-        name: 'get_data_summary',
-        description: 'Generate a summary of the data in the explore. We will fetch the data from the explore, and create a summary. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
+        name: 'get_data_analysis',
+        description: 'Generate a summary of the data in the explore. We will fetch the data from the explore, and create a summary in markdown format. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
         parameters: {
           type: 'OBJECT',
           properties: {
@@ -255,6 +253,8 @@ const AgentPage = () => {
     ]  
     
     const systemInstruction = `You are a helpful assistant that is inside of Looker. Your job is to help me answer questions about this data set ${currentExploreThread?.exploreKey}. The model is ${currentExplore.modelName} and the explore is ${currentExplore.exploreId}. If you make links to an explore, they should look like https://${hostName}/explore/${currentExplore.modelName}/${currentExplore.exploreId}. If you're generating a link to an explore, prefer to use the get_explore_link tool instead of trying to generate it yourself. Try not to make the text of the link the full URL, but try to describe the explore in a way that is easy to understand.
+
+    If you're asked to generate a summary or analysis, use the get_data_analysis tool. Return the analysis in markdown format that was provided to you by the get_data_analysis tool. Don't include the JSON, just the markdown text.
     
     Here are the dimensions and measures that are defined in this data set:
      | Field Id | Field Type | LookML Type | Label | Description | Tags |
@@ -349,7 +349,7 @@ const AgentPage = () => {
             measures,
             examples: examples.exploreGenerationExamples,
           })
-          console.log('Explore Query Response', response)
+
           const functionResponseMessage: FunctionResponse = {
             uuid: uuidv4(),
             callUuid: functionCallMessage.uuid,
@@ -378,12 +378,42 @@ const AgentPage = () => {
 
           dispatch(addMessage(functionResponseMessage))
           contentList.push(functionResponseMessage)
-        } else if (functionName === 'get_data_summary') {
+        } else if (functionName === 'get_data_analysis') {
          // get all the data and create a summary
 
+         const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
+
+         const summary = await summarizeData(data)
+
+          // run the query and respond with the data
+          const functionResponseMessage: FunctionResponse = {
+            uuid: uuidv4(),
+            callUuid: functionCallMessage.uuid,
+            name: functionName,
+            response: summary,
+            createdAt: Date.now(),
+            type: 'functionResponse',
+          }
+
+          dispatch(addMessage(functionResponseMessage))
+          contentList.push(functionResponseMessage)
 
         } else if (functionName === 'get_data_sample') {
+
+          const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
+
           // run the query and respond with the data
+          const functionResponseMessage: FunctionResponse = {
+            uuid: uuidv4(),
+            callUuid: functionCallMessage.uuid,
+            name: functionName,
+            response: data,
+            createdAt: Date.now(),
+            type: 'functionResponse',
+          }
+
+          dispatch(addMessage(functionResponseMessage))
+          contentList.push(functionResponseMessage)
         }
         // If you add more tools, handle them similarly here
       }

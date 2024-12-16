@@ -1,6 +1,12 @@
+import { Looker40SDK } from '@looker/sdk'
 import { ExploreParams } from '../slices/assistantSlice'
 
 export class ExploreHelper {
+
+  static getData = async (requestBody: any, core40SDK: Looker40SDK): Promise<string> => {
+    const data = await core40SDK.ok(core40SDK.run_inline_query({ result_format: 'md', body: requestBody }))
+    return data
+  }
 
   static exploreQueryArgumentString = (exploreParams: ExploreParams): string => {
     const encodedParams = ExploreHelper.encodeExploreParams(exploreParams)
