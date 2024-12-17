@@ -381,10 +381,13 @@ const AgentPage = () => {
           contentList.push(functionResponseMessage)
         } else if (functionName === 'get_data_analysis') {
          // get all the data and create a summary
-
-         const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
-
-         const summary = await summarizeData(data)
+         let summary = ''
+          try {
+            const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
+            summary = await summarizeData(data)
+          } catch (error) {
+            summary = 'There was an error fetching the data, likely the request body was invalid'
+          }
 
           // run the query and respond with the data
           const functionResponseMessage: FunctionResponse = {
