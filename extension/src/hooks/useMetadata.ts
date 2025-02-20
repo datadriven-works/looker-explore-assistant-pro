@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { getCore40SDK } from '@looker/extension-sdk-react'
 import {
@@ -10,13 +10,25 @@ import {
   ExploreDefinition,
 } from '../slices/assistantSlice'
 
+interface ExploreConfig {
+  sample_prompts?: Record<string, {input: string; output: string}[]>
+  explore_whitelist?: string[]
+  explore_blacklist?: string[]
+}
+
 export const useMetadata = () => {
   const dispatch = useDispatch()
   const sdk = getCore40SDK()
+  const [exploreConfig, setExploreConfig] = useState<ExploreConfig | null>(null)
 
-  const getExamplePrompts = async () => {
-    const generationExamples: ExploreExamples = {}
-    dispatch(setExploreGenerationExamples(generationExamples))
+  const loadConfig = async () => {
+    try {
+      const config = await import('../config/explore_config.yaml')
+      setExploreConfig(config.default)
+    } catch {
+      console.log('No custom explore config found, using default empty config')
+      setExploreConfig({})
+    }
   }
 
   const getExplores = async () => {
@@ -36,12 +48,31 @@ export const useMetadata = () => {
         }
 
         for (const oneExplore of explores) {
-          definedExplores.push({
-            exploreKey: `${model.name}:${oneExplore.name}`,
-            modelName: model.name!,
-            exploreId: oneExplore.name || '',
-            samples: []
-          })
+          const oneExploreKey = `${model.name}:${oneExplore.name}`
+          if(exploreConfig?.explore_blacklist?.includes(oneExploreKey)) {
+            continue
+          }
+
+          // if there is a whilte list, only add the explore if it is in the whitelist
+          if(exploreConfig?.explore_whitelist && exploreConfig?.explore_whitelist?.length > 0) {
+            if(!exploreConfig?.explore_whitelist?.includes(oneExploreKey)) {
+              continue
+            }
+
+            definedExplores.push({
+              exploreKey: oneExploreKey,
+              modelName: model.name!,
+              exploreId: oneExplore.name || '',
+              samples: [] // TODO: add samples  
+            })
+          } else {
+            definedExplores.push({
+              exploreKey: oneExploreKey,
+              modelName: model.name!,
+              exploreId: oneExplore.name || '',
+              samples: [] // TODO: add samples  
+            })
+          }
         }
       }
 
@@ -66,11 +97,18 @@ export const useMetadata = () => {
   }
 
   useEffect(() => {
+    loadConfig()
+  },[])
+
+  useEffect(() => {
+    if(!exploreConfig) {
+      return
+    }
+
     Promise.all([
-      getExamplePrompts(),
       getExplores()
     ]).finally(() => {
       dispatch(setIsMetadataLoaded(true))
     })
-  }, [])
+  }, [exploreConfig])
 }

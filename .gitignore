@@ -11,3 +11,7 @@ node_modules
 
 .vertex_cf_auth_token
 dist
+
+# Ignore all YAML files in config except example_explore_config.yaml
+extension/src/config/*.yaml
+!/extension/src/config/example_explore_config.yaml 
