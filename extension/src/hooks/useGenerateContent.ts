@@ -1,6 +1,5 @@
 import { ModelParameters } from '../utils/VertexHelper'
 import CryptoJS from 'crypto-js'
-import { ExploreExamples } from '../slices/assistantSlice'
 import looker_filter_doc from '../documents/looker_filter_doc.md'
 import looker_visualization_doc from '../documents/looker_visualization_doc.md'
 import looker_query_body from '../documents/looker_query_body.md'
@@ -50,14 +49,12 @@ export const useGenerateContent = () => {
     exploreId,
     dimensions,
     measures,
-    examples,
   }: {
     userRequest: string
     modelName: string
     exploreId: string
     dimensions: any[]
     measures: any[]
-    examples: ExploreExamples
   }) => {
     const systemInstruction = `You are a helpful assistant that generates a Looker explore request body that answers the user question. The request body will be compatible with the Looker API endpoints for run_inline_query. It will use the dimensions/measures defined in the semantic model to create the explore.
 
@@ -112,10 +109,6 @@ export const useGenerateContent = () => {
       {
         role: 'user',
         parts: [queryBodyDocumentation],
-      },
-      {
-        role: 'user',
-        parts: [`Here are some examples of how to use filters in Looker: ${examples}`],
       },
       {
         role: 'user',

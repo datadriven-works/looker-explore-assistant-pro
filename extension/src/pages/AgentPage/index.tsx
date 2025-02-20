@@ -120,7 +120,6 @@ const AgentPage = () => {
     currentExplore,
     sidePanel,
     explores,
-    examples,
     semanticModels,
     isMetadataLoaded,
     isSemanticModelLoaded,
@@ -340,7 +339,6 @@ const AgentPage = () => {
             exploreId: currentExplore.exploreId,
             dimensions,
             measures,
-            examples: examples.exploreGenerationExamples,
           })
 
           const functionResponseMessage: FunctionResponse = {
@@ -427,7 +425,7 @@ const AgentPage = () => {
   
     // update the history with the current contents of the thread
     dispatch(updateLastHistoryEntry())
-  }, [query, semanticModels, examples, currentExplore, currentExploreThread])
+  }, [query, semanticModels, currentExplore, currentExploreThread])
   
   const isDataLoaded = isMetadataLoaded && isSemanticModelLoaded
 
@@ -605,7 +603,7 @@ const AgentPage = () => {
                     />
                   </div>
                 )}
-                <div className="flex flex-col max-w-3xl px-4 py-2 border">
+                <div className="flex flex-col max-w-3xl px-4 py-2">
                   <div className="flex items-center justify-between">
                     <div className="flex-grow">
                       <div className="mb-1 text-2xl font-semibold text-gray-800">

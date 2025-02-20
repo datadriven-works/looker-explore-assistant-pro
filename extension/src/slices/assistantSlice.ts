@@ -28,20 +28,6 @@ export interface ExploreDefinition {
   samples: string[]
 }
 
-export interface ExploreExamples {
-  [exploreKey: string]: {
-    input: string
-    output: string
-  }[]
-}
-
-export interface RefinementExamples {
-  [exploreKey: string]: {
-    input: string[]
-    output: string
-  }[]
-}
-
 interface Field {
   name: string
   type: string
@@ -125,10 +111,6 @@ export interface AssistantState {
     [exploreKey: string]: SemanticModel
   }
   query: string
-  examples: {
-    exploreGenerationExamples: ExploreExamples
-    exploreRefinementExamples: RefinementExamples
-  },
   explores: ExploreDefinition[],
   settings: Settings,
   isMetadataLoaded: boolean,
@@ -175,10 +157,6 @@ export const initialState: AssistantState = {
   history: [],
   query: '',
   semanticModels: {},
-  examples: {
-    exploreGenerationExamples: {},
-    exploreRefinementExamples: {},
-  },
   explores: [],
   settings: {
     show_explore_data: {
@@ -299,12 +277,6 @@ export const assistantSlice = createSlice({
       }
       state.currentExploreThread.messages.push(action.payload)
     },
-    setExploreGenerationExamples(
-      state,
-      action: PayloadAction<AssistantState['examples']['exploreGenerationExamples']>,
-    ) {
-      state.examples.exploreGenerationExamples = action.payload
-    },
     setExplores(
       state,
       action: PayloadAction<ExploreDefinition[]>,
@@ -352,7 +324,6 @@ export const {
   setQuery,
   resetChat,
   addMessage,
-  setExploreGenerationExamples,
   setExplores,
 
   updateCurrentThread,
