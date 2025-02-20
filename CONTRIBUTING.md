@@ -1,14 +1,8 @@
-# Contributing to Looker looker-explore-assistant
+# Contributing to Looker looker-explore-assistant-pro
 
 🎉 Before we dive in... Thank you for taking the time contribute! 🎉
 
 The following is a set of guidelines for contributing to the looker-explore-assistant repository, which are hosted in the Looker Organization on GitHub. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
-
-## Contributor License Agreement
-
-Contributions to this project must be accompanied by a Contributor License Agreement (CLA). You (or your employer) retain the copyright to your contribution; this simply gives us permission to use and redistribute your contributions as part of the project. Head over to <https://cla.developers.google.com/> to see your current agreements on file or to sign a new one.
-
-You generally only need to submit a CLA once, so if you've already submitted one (even if it was for a different project), you probably don't need to do it again.
 
 ## Code of Conduct
 
@@ -20,19 +14,17 @@ See our [README](README.md) for development setup instructions.
 
 ### Bug Reports
 
-Bugs from the community are tracked in [Github Issues](https://github.com/looker-open-source/looker-explore-assistant/issues).
-Because there are many different SDKs and languages included in this repository, it may be useful to look at issues in a [project](https://github.com/looker-open-source/looker-explore-assistant/projects) context instead.
+Bugs from the community are tracked in [Github Issues](https://github.com/datadriven-works/looker-explore-assistant-pro/issues).
 
 - Use a clear and descriptive title for the issue
 - Note what version and which SDK you're using
 - Describe how to reproduce the problem
-    - Bonus points for a working example in [examples](/examples)
 - Explain the behavior your were expecting
 - Label your issue with "bug"
 
 ## Enhancements Requests
 
-Enhancements Requests from the community are tracked in [Github Issues](https://github.com/looker-open-source/looker-explore-assistant/issues).
+Enhancements Requests from the community are tracked in [Github Issues](https://github.com/datadriven-works/looker-explore-assistant-pro/issues).
 
 - Use a clear and descriptive title for the issue
 - Describe what you want to be able to accomplish with Looker Components
@@ -89,7 +81,7 @@ Edit the developer checklist to reflect only items relevant to your pull request
 Not sure if an item applies? Leave it in place and ask your reviewer to help determine if it's relevant.
 
 Thank you for opening a Pull Request! Before submitting your PR, there are a few things you can do to make sure it goes smoothly:
-- [ ] Make sure to open an issue as a [bug/issue](https://github.com/looker-open-source/looker-explore-assistant/issues/new/choose) before writing your code!  That way we can discuss the change, evaluate designs, and agree on the general idea
+- [ ] Make sure to open an issue as a [bug/issue](https://github.com/datadriven-works/looker-explore-assistant-pro/issues/new/choose) before writing your code!  That way we can discuss the change, evaluate designs, and agree on the general idea
 - [ ] Ensure the tests and linter pass
 - [ ] Appropriate docs were updated (if necessary)
 
