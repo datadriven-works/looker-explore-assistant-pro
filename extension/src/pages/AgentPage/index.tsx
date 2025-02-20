@@ -597,7 +597,7 @@ const AgentPage = () => {
 
               <div className="flex flex-col max-w-3xl m-auto mt-12">
                 {explores.length > 1 && (
-                  <div className="text-md p-2 max-w-3xl">
+                  <div className="text-md p-2 max-w-3xl mb-8">
                     <ExplorePicker
                       explores={explores}
                       currentExploreKey={currentExplore.exploreKey}
@@ -605,7 +605,7 @@ const AgentPage = () => {
                     />
                   </div>
                 )}
-                <div className="flex flex-col max-w-3xl px-4 py-2">
+                <div className="flex flex-col max-w-3xl px-4 py-2 border">
                   <div className="flex items-center justify-between">
                     <div className="flex-grow">
                       <div className="mb-1 text-2xl font-semibold text-gray-800">
@@ -619,7 +619,7 @@ const AgentPage = () => {
                       href={`https://${hostName}/explore/${currentExplore.modelName}/${currentExplore.exploreId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
                       Visit Explore
                       <ExternalLink className="w-4 h-4 ml-2 -mr-1" />
