@@ -40,6 +40,7 @@ import { formatRow } from '../../hooks/useGenerateContent'
 import { ExploreHelper } from '../../utils/ExploreHelper'
 import { ExtensionContext } from '@looker/extension-sdk-react'
 import { Loading } from '../../components/Loading'
+import ExplorePicker from '../../components/ExplorePicker'
 
 const exploreRequestBodySchema = {
   fields: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to include in the explore' },
@@ -587,21 +588,12 @@ const AgentPage = () => {
 
               <div className="flex flex-col max-w-3xl m-auto mt-16">
                 {explores.length > 1 && (
-                  <div className="text-md border-b-2 p-2 max-w-3xl">
-                    <FormControl className="">
-                      <InputLabel>Explore</InputLabel>
-                      <Select
-                        value={currentExplore.exploreKey}
-                        label="Explore"
-                        onChange={handleExploreChange}
-                      >
-                        {explores.map((oneExplore) => (
-                          <MenuItem key={oneExplore.exploreKey} value={oneExplore.exploreKey}>
-                            {toCamelCase(oneExplore.exploreId)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                  <div className="text-md p-2 max-w-3xl">
+                    <ExplorePicker
+                      explores={explores}
+                      currentExploreKey={currentExplore.exploreKey}
+                      onChange={handleExploreChange}
+                    />
                   </div>
                 )}
                 <SamplePrompts />

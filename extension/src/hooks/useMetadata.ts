@@ -19,7 +19,7 @@ export const useMetadata = () => {
     dispatch(setExploreGenerationExamples(generationExamples))
   }
 
-  const getSamples = async () => {
+  const getExplores = async () => {
     try {
       // Fetch all explores from Looker
       const allModels = await sdk.ok(sdk.all_lookml_models({
@@ -45,6 +45,9 @@ export const useMetadata = () => {
         }
       }
 
+      // sort the defined explores by the explore name
+      definedExplores.sort((a, b) => a.exploreId.localeCompare(b.exploreId))
+
       dispatch(setExplores(definedExplores))
       
       // Set the first explore as current if available
@@ -65,7 +68,7 @@ export const useMetadata = () => {
   useEffect(() => {
     Promise.all([
       getExamplePrompts(),
-      getSamples()
+      getExplores()
     ]).finally(() => {
       dispatch(setIsMetadataLoaded(true))
     })
