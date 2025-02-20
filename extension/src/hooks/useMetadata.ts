@@ -1,35 +1,34 @@
-import { useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux'
+
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { getCore40SDK } from '@looker/extension-sdk-react'
 import {
-  setExploreGenerationExamples,
   setExplores,
   setIsMetadataLoaded,
   setCurrenExplore,
-  ExploreExamples,
   ExploreDefinition,
+  setExploreAssistantConfig,
+  setUser,
 } from '../slices/assistantSlice'
-
-interface ExploreConfig {
-  sample_prompts?: Record<string, {input: string; output: string}[]>
-  explore_whitelist?: string[]
-  explore_blacklist?: string[]
-}
+import { RootState } from '../store'
 
 export const useMetadata = () => {
   const dispatch = useDispatch()
   const sdk = getCore40SDK()
-  const [exploreConfig, setExploreConfig] = useState<ExploreConfig | null>(null)
 
+  const { exploreAssistantConfig } = useSelector((state: RootState) => state.assistant)
   const loadConfig = async () => {
     try {
       const config = await import('../config/explore_config.yaml')
-      setExploreConfig(config.default)
+      dispatch(setExploreAssistantConfig(config.default))
     } catch {
       console.log('No custom explore config found, using default empty config')
-      setExploreConfig({})
+      dispatch(setExploreAssistantConfig({}))
     }
   }
+
+
+
 
   const getExplores = async () => {
     try {
@@ -49,13 +48,17 @@ export const useMetadata = () => {
 
         for (const oneExplore of explores) {
           const oneExploreKey = `${model.name}:${oneExplore.name}`
-          if(exploreConfig?.explore_blacklist?.includes(oneExploreKey)) {
+          if(exploreAssistantConfig?.explore_blacklist?.includes(oneExploreKey)) {
             continue
           }
 
+          // check for samples in the config
+          const samples = exploreAssistantConfig?.sample_prompts?.[oneExploreKey] || []
+
+
           // if there is a whilte list, only add the explore if it is in the whitelist
-          if(exploreConfig?.explore_whitelist && exploreConfig?.explore_whitelist?.length > 0) {
-            if(!exploreConfig?.explore_whitelist?.includes(oneExploreKey)) {
+          if(exploreAssistantConfig?.explore_whitelist && exploreAssistantConfig?.explore_whitelist?.length > 0) {
+            if(!exploreAssistantConfig?.explore_whitelist?.includes(oneExploreKey)) {
               continue
             }
 
@@ -63,14 +66,14 @@ export const useMetadata = () => {
               exploreKey: oneExploreKey,
               modelName: model.name!,
               exploreId: oneExplore.name || '',
-              samples: [] // TODO: add samples  
+              samples: samples
             })
           } else {
             definedExplores.push({
               exploreKey: oneExploreKey,
               modelName: model.name!,
               exploreId: oneExplore.name || '',
-              samples: [] // TODO: add samples  
+              samples: samples
             })
           }
         }
@@ -96,19 +99,31 @@ export const useMetadata = () => {
     }
   }
 
+  const getUser = async () => {
+    const user = await sdk.ok(sdk.me())
+    dispatch(setUser({
+      id: user.id || '',
+      email: user.email || '',
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      group_ids: user.group_ids || []
+    }))
+  }
+
   useEffect(() => {
     loadConfig()
   },[])
 
   useEffect(() => {
-    if(!exploreConfig) {
+    if(!exploreAssistantConfig) {
       return
     }
 
     Promise.all([
-      getExplores()
+      getExplores(),
+      getUser()
     ]).finally(() => {
       dispatch(setIsMetadataLoaded(true))
     })
-  }, [exploreConfig])
+  }, [exploreAssistantConfig])
 }

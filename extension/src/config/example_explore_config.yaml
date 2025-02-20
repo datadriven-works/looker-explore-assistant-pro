@@ -20,4 +20,8 @@ sample_prompts:
     - input: "Which categories have the highest cost of goods sold?"
       ou
 explore_whitelist:
+  - thelook:order_items
 explore_blacklist:
+  - thelook:users
+allowed_looker_group_ids:
+  - 81

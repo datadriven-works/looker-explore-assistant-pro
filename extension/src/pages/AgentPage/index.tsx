@@ -41,6 +41,7 @@ import { ExploreHelper } from '../../utils/ExploreHelper'
 import { ExtensionContext } from '@looker/extension-sdk-react'
 import { Loading } from '../../components/Loading'
 import ExplorePicker from '../../components/ExplorePicker'
+import { NotAuthorized } from '../../components/NotAuthorized'
 
 const exploreRequestBodySchema = {
   fields: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to include in the explore' },
@@ -126,6 +127,8 @@ const AgentPage = () => {
     semanticModels,
     isMetadataLoaded,
     isSemanticModelLoaded,
+    user,
+    exploreAssistantConfig,
   } = useSelector((state: RootState) => state.assistant as AssistantState)
 
   const scrollIntoView = useCallback(() => {
@@ -462,6 +465,15 @@ const AgentPage = () => {
     return <Loading />
   }
 
+  let isUserAllowed = true
+  if (user && exploreAssistantConfig?.allowed_looker_group_ids) {
+    isUserAllowed = user?.group_ids.some((group) => exploreAssistantConfig?.allowed_looker_group_ids?.includes(group))
+  }
+
+  if (!isUserAllowed) {
+    return <NotAuthorized />
+  }
+
   return (
     <div className="relative page-container flex h-screen w-full">
       <Sidebar expanded={expanded} toggleDrawer={toggleDrawer} />
@@ -596,6 +608,9 @@ const AgentPage = () => {
                     />
                   </div>
                 )}
+                <div className="text-md p-2 max-w-3xl">
+                  {currentExplore.modelName}:{currentExplore.exploreId}
+                </div>
                 <SamplePrompts />
               </div>
 

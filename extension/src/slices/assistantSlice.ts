@@ -25,7 +25,7 @@ export interface ExploreDefinition {
   exploreKey: string
   modelName: string
   exploreId: string
-  samples: Sample[]
+  samples: string[]
 }
 
 export interface ExploreExamples {
@@ -47,11 +47,6 @@ interface Field {
   type: string
   description: string
   tags: string[]
-}
-
-interface Sample {
-  category: string
-  prompt: string
 }
 
 export interface TextMessage {
@@ -102,6 +97,14 @@ export interface SemanticModel {
   modelName: string
 }
 
+export interface User {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  group_ids: string[]
+}
+
 export interface AssistantState {
   isQuerying: boolean
   isChatMode: boolean
@@ -111,6 +114,8 @@ export interface AssistantState {
     modelName: string
     exploreId: string
   }
+  user: User | null
+  exploreAssistantConfig: ExploreAssistantConfig | null
   sidePanel: {
     isSidePanelOpen: boolean
     exploreParams: ExploreParams
@@ -145,6 +150,13 @@ export const newThreadState = () => {
   return thread
 }
 
+export interface ExploreAssistantConfig {
+  sample_prompts?: Record<string, string[]>
+  explore_whitelist?: string[]
+  explore_blacklist?: string[]
+  allowed_looker_group_ids?: string[]
+}
+
 export const initialState: AssistantState = {
   isQuerying: false,
   isChatMode: false,
@@ -154,6 +166,8 @@ export const initialState: AssistantState = {
     modelName: '',
     exploreId: ''
   },
+  user: null,
+  exploreAssistantConfig: null,
   sidePanel: {
     isSidePanelOpen: false,
     exploreParams: {},
@@ -217,6 +231,12 @@ export const assistantSlice = createSlice({
     },
     clearHistory : (state) => {
       state.history = []
+    },
+    setExploreAssistantConfig: (state, action: PayloadAction<ExploreAssistantConfig>) => {
+      state.exploreAssistantConfig = action.payload
+    },
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload
     },
     updateLastHistoryEntry: (state) => {
       if (state.currentExploreThread === null) {
@@ -351,6 +371,8 @@ export const {
   setCurrenExplore,
 
   resetExploreAssistant,
+  setExploreAssistantConfig,
+  setUser,
 } = assistantSlice.actions
 
 export default assistantSlice.reducer

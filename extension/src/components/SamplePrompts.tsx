@@ -16,7 +16,7 @@ const SamplePrompts = () => {
     explores,
   } = useSelector((state: RootState) => state.assistant as AssistantState)
 
-  const samples = explores.find((explore) => explore.exploreKey === `${modelName}:${exploreId}`)?.samples
+  const samples = explores.find((explore) => explore.exploreKey === `${modelName}:${exploreId}`)?.samples || []
 
   const handleSubmit = (prompt: string) => {
     dispatch(resetChat())
@@ -30,14 +30,13 @@ const SamplePrompts = () => {
     <div className="flex flex-wrap max-w-5xl">
       {samples.map((item, index: number) => (
         <div
-          className="flex flex-col w-56 min-h-44 bg-gray-200/50 hover:bg-gray-200 rounded-lg cursor-pointer text-sm p-4 m-2"
+          className="flex flex-col w-56 min-h-24 bg-gray-200/50 hover:bg-gray-200 rounded-lg cursor-pointer text-sm p-4 m-2"
           key={index}
           onClick={() => {
-            handleSubmit(item.prompt)
+            handleSubmit(item)
           }}
         >
-          <div className="flex-grow font-light line-camp-5">{item.prompt}</div>
-          <div className="mt-2 font-semibold justify-end">{item.category}</div>
+          <div className="flex-grow font-light line-clamp-2">{item}</div>
         </div>
       ))}
     </div>

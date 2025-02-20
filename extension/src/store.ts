@@ -16,6 +16,8 @@ const neverPersistKeys: (keyof AssistantState)[] = [
   'isMetadataLoaded',
   'isSemanticModelLoaded',
   'explores',
+  'user',
+  'exploreAssistantConfig',
   'currentExplore',
   'currentExploreThread',
   'isChatMode',

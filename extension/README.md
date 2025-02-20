@@ -45,12 +45,6 @@ This section describes how to set up the LLM Integration for the Explore Assista
    VERTEX_CF_AUTH_TOKEN=<This is the token used to communicate with the cloud function>
    ```
 
-   An optional list of allowed looker group ids. If the user isn't a member of any of the groups, then they won't be able to use the looker explore assistant.
-
-   ```
-   ALLOWED_LOOKER_GROUP_IDS=<The group id of the group that has access to the Looker instance>
-   ```
-
 3. Start the development server
    **IMPORTANT** If you are running the extension from a VM or another remote machine, you will need to Port Forward to the machine where you are accessing the Looker Instance from (ie. If you are accessing Looker from your local machine, run the following command there.). Here's a boilerplate example for port forwarding the remote port 8080 to the local port 8080:
    `ssh username@host -L 8080:localhost:8080`.
