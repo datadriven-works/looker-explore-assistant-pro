@@ -42,10 +42,10 @@ const ExplorePicker: React.FC<ExplorePickerProps> = ({ explores, currentExploreK
 
   return (
     <FormControl fullWidth>
-      <InputLabel>Explore</InputLabel>
+      <InputLabel>Choose an Explore</InputLabel>
       <Select
         value={currentExploreKey}
-        label="Explore"
+        label="Choose an Explore"
         onChange={onChange}
       >
         {sortedModelNames.map((modelName) => [

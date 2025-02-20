@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import { IconButton, Tooltip } from '@mui/material'
-import MenuIcon from '@mui/icons-material/Menu'
 import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
@@ -17,6 +16,7 @@ import {
 import { RootState } from '../../store'
 import SettingsModal from './Settings'
 import { useGenerateContent } from '../../hooks/useGenerateContent'
+import { ChevronsLeft, ChevronsRight } from 'lucide-react'
 
 interface SidebarProps {
   expanded: boolean
@@ -110,7 +110,7 @@ const Sidebar = ({ expanded, toggleDrawer }: SidebarProps) => {
           arrow={false}
         >
           <IconButton onClick={handleClick} className="mr-2">
-            <MenuIcon />
+            {expanded ? <ChevronsLeft /> : <ChevronsRight />}
           </IconButton>
         </Tooltip>
       </div>
