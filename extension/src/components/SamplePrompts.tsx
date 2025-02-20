@@ -13,10 +13,10 @@ const SamplePrompts = () => {
   const dispatch = useDispatch()
   const {
     currentExplore: { modelName, exploreId },
-    examples: { exploreSamples },
+    explores,
   } = useSelector((state: RootState) => state.assistant as AssistantState)
 
-  const samples = exploreSamples[`${modelName}:${exploreId}`]
+  const samples = explores.find((explore) => explore.exploreKey === `${modelName}:${exploreId}`)?.samples
 
   const handleSubmit = (prompt: string) => {
     dispatch(resetChat())

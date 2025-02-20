@@ -21,8 +21,11 @@ export interface Settings {
   [key: string]: Setting
 }
 
-export interface ExploreSamples {
-  [exploreKey: string]: Sample[]
+export interface ExploreDefinition {
+  exploreKey: string
+  modelName: string
+  exploreId: string
+  samples: Sample[]
 }
 
 export interface ExploreExamples {
@@ -120,10 +123,10 @@ export interface AssistantState {
   examples: {
     exploreGenerationExamples: ExploreExamples
     exploreRefinementExamples: RefinementExamples
-    exploreSamples: ExploreSamples
   },
+  explores: ExploreDefinition[],
   settings: Settings,
-  isBigQueryMetadataLoaded: boolean,
+  isMetadataLoaded: boolean,
   isSemanticModelLoaded: boolean
 }
 
@@ -161,8 +164,8 @@ export const initialState: AssistantState = {
   examples: {
     exploreGenerationExamples: {},
     exploreRefinementExamples: {},
-    exploreSamples: {}
   },
+  explores: [],
   settings: {
     show_explore_data: {
       name: 'Show Explore Data',
@@ -170,7 +173,7 @@ export const initialState: AssistantState = {
       value: false,
     },
   },
-  isBigQueryMetadataLoaded: false,
+  isMetadataLoaded: false,
   isSemanticModelLoaded: false
 }
 
@@ -282,23 +285,17 @@ export const assistantSlice = createSlice({
     ) {
       state.examples.exploreGenerationExamples = action.payload
     },
-    setExploreRefinementExamples(
+    setExplores(
       state,
-      action: PayloadAction<AssistantState['examples']['exploreRefinementExamples']>,
+      action: PayloadAction<ExploreDefinition[]>,
     ) {
-      state.examples.exploreRefinementExamples = action.payload
+      state.explores = action.payload
     },
-    setExploreSamples(
-      state,
-      action: PayloadAction<ExploreSamples>,
-    ) {
-      state.examples.exploreSamples = action.payload
-    },
-    setisBigQueryMetadataLoaded: (
+    setIsMetadataLoaded: (
       state, 
       action: PayloadAction<boolean>
     ) => {
-      state.isBigQueryMetadataLoaded = action.payload
+      state.isMetadataLoaded = action.payload
     },
     setIsSemanticModelLoaded: (state, action: PayloadAction<boolean>) => {
       state.isSemanticModelLoaded = action.payload
@@ -336,10 +333,7 @@ export const {
   resetChat,
   addMessage,
   setExploreGenerationExamples,
-  setExploreRefinementExamples,
-  setExploreSamples,
-
-  setisBigQueryMetadataLoaded,
+  setExplores,
 
   updateCurrentThread,
   setCurrentThread,
@@ -347,6 +341,8 @@ export const {
   openSidePanel,
   closeSidePanel,
   setSidePanelExploreParams,
+
+  setIsMetadataLoaded,
 
   setSetting,
   resetSettings,

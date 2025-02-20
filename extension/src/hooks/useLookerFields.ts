@@ -12,11 +12,11 @@ import { useErrorBoundary } from 'react-error-boundary'
 
 export const useLookerFields = () => {
   const {
-    examples: { exploreSamples },
+    explores,
     isSemanticModelLoaded,
   } = useSelector((state: RootState) => state.assistant as AssistantState)
 
-  const supportedExplores = Object.keys(exploreSamples)
+  const supportedExplores = explores.map((explore) => explore.exploreKey)
 
   const dispatch = useDispatch()
   const { showBoundary } = useErrorBoundary()
@@ -59,7 +59,7 @@ export const useLookerFields = () => {
             fields: 'fields',
           }),
         )
-
+      
         const { fields } = response
 
         if (!fields || !fields.dimensions || !fields.measures) {

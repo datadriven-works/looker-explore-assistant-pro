@@ -29,7 +29,6 @@ import CloseIcon from '@mui/icons-material/Close'
 import {
   FormControl,
   InputLabel,
-  LinearProgress,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -121,20 +120,12 @@ const AgentPage = () => {
     currentExploreThread,
     currentExplore,
     sidePanel,
+    explores,
     examples,
     semanticModels,
-    isBigQueryMetadataLoaded,
+    isMetadataLoaded,
     isSemanticModelLoaded,
   } = useSelector((state: RootState) => state.assistant as AssistantState)
-
-  const explores = Object.keys(examples.exploreSamples).map((key) => {
-    const exploreParts = key.split(':')
-    return {
-      exploreKey: key,
-      modelName: exploreParts[0],
-      exploreId: exploreParts[1],
-    }
-  })
 
   const scrollIntoView = useCallback(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -386,6 +377,7 @@ const AgentPage = () => {
             const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
             summary = await summarizeData(data)
           } catch (error) {
+            console.error('Error fetching data', error)
             summary = 'There was an error fetching the data, likely the request body was invalid'
           }
 
@@ -436,7 +428,7 @@ const AgentPage = () => {
     dispatch(updateLastHistoryEntry())
   }, [query, semanticModels, examples, currentExplore, currentExploreThread])
   
-  const isDataLoaded = isBigQueryMetadataLoaded && isSemanticModelLoaded
+  const isDataLoaded = isMetadataLoaded && isSemanticModelLoaded
 
   useEffect(() => {
     if (!query || query === '' || !isDataLoaded) {
@@ -463,7 +455,7 @@ const AgentPage = () => {
     )
   }
 
-  const isAgentReady = isBigQueryMetadataLoaded && isSemanticModelLoaded
+  const isAgentReady = isMetadataLoaded && isSemanticModelLoaded
 
   if (!isAgentReady) {
     return <Loading />

@@ -13,8 +13,10 @@ import assistantReducer, {
 const neverPersistKeys: (keyof AssistantState)[] = [
   'semanticModels',
   'examples',
-  'isBigQueryMetadataLoaded',
+  'isMetadataLoaded',
   'isSemanticModelLoaded',
+  'explores',
+  'currentExplore',
   'currentExploreThread',
   'isChatMode',
   'isQuerying',

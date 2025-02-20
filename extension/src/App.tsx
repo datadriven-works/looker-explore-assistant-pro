@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useLookerFields } from './hooks/useLookerFields'
-import { useBigQueryExamples } from './hooks/useBigQueryExamples'
+import { useMetadata } from './hooks/useMetadata'
 import AgentPage from './pages/AgentPage'
 import { ExtensionContext } from '@looker/extension-sdk-react'
 import { NotAuthorized } from './components/NotAuthorized'
@@ -10,7 +10,7 @@ const ExploreApp = () => {
   const { core40SDK } = useContext(ExtensionContext)
   // load dimensions, measures and examples into the state
   useLookerFields()
-  useBigQueryExamples()
+  useMetadata()
 
   const [loading, setLoading] = useState(true)
   const [userGroups, setUserGroups] = useState<string[]>([])
