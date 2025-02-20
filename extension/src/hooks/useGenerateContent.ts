@@ -196,7 +196,7 @@ export const useGenerateContent = () => {
     parameters = {},
     responseSchema = null,
     tools = [],
-    modelName = 'gemini-2.0-flash-exp',
+    modelName = 'gemini-2.0-flash',
     systemInstruction = '',
   }: {
     contents: any[]

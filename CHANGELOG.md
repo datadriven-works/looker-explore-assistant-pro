@@ -1,4 +1,17 @@
 # Changelog
+
+## 4.0
+
+## Added
+- YAML configuration file
+- Configuration file for whitelists / blacklists of explores. If no whitelists/blacklists are employed, then we show every explore you ahve available
+- Improved the getting started instructions
+- Allowed looker groups are now in the yaml configuration
+- Updated to use gemini-2.0-flash by default
+
+## Removed
+- Completely removed the static examples
+
 ## v3.1
 
 ### Added
