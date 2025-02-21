@@ -1,6 +1,6 @@
 {
   "name": "explore-assistant",
-  "version": "0.1.0",
+  "version": "4.0.0",
   "description": "Explore Looker data through Natural Language",
   "main": "dist/bundle.js",
   "scripts": {
@@ -53,7 +53,8 @@
     "sass-loader": "^16.0.4",
     "styled-components": "^6.1.13",
     "tailwindcss": "^3.4.16",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "yaml-loader": "^0.8.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.25.9",

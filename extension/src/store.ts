@@ -12,9 +12,12 @@ import assistantReducer, {
 // Define keys that should never be persisted
 const neverPersistKeys: (keyof AssistantState)[] = [
   'semanticModels',
-  'examples',
-  'isBigQueryMetadataLoaded',
+  'isMetadataLoaded',
   'isSemanticModelLoaded',
+  'explores',
+  'user',
+  'exploreAssistantConfig',
+  'currentExplore',
   'currentExploreThread',
   'isChatMode',
   'isQuerying',

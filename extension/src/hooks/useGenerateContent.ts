@@ -1,6 +1,5 @@
 import { ModelParameters } from '../utils/VertexHelper'
 import CryptoJS from 'crypto-js'
-import { ExploreExamples } from '../slices/assistantSlice'
 import looker_filter_doc from '../documents/looker_filter_doc.md'
 import looker_visualization_doc from '../documents/looker_visualization_doc.md'
 import looker_query_body from '../documents/looker_query_body.md'
@@ -32,7 +31,7 @@ export const useGenerateContent = () => {
 
 
   const summarizeData = async (data: string) => {
-    console.log('data', data)
+
     const systemInstruction = `You are a helpful assistant that summarizes the data. The data is in markdown format.`
     const prompt = `Make a summary of this data for a slide presentation. The summary should be a markdown documents that contains a list of sections, each section should have the following details:  a section title, which is the title for the given part of the summary, and key points which a list of key points for the concise summary. Data should be returned in each section, you will be penalized if it doesn't adhere to this format. Each summary should only be included once. Do not include the same summary twice.
     `
@@ -50,14 +49,12 @@ export const useGenerateContent = () => {
     exploreId,
     dimensions,
     measures,
-    examples,
   }: {
     userRequest: string
     modelName: string
     exploreId: string
     dimensions: any[]
     measures: any[]
-    examples: ExploreExamples
   }) => {
     const systemInstruction = `You are a helpful assistant that generates a Looker explore request body that answers the user question. The request body will be compatible with the Looker API endpoints for run_inline_query. It will use the dimensions/measures defined in the semantic model to create the explore.
 
@@ -112,10 +109,6 @@ export const useGenerateContent = () => {
       {
         role: 'user',
         parts: [queryBodyDocumentation],
-      },
-      {
-        role: 'user',
-        parts: [`Here are some examples of how to use filters in Looker: ${examples}`],
       },
       {
         role: 'user',
@@ -203,7 +196,7 @@ export const useGenerateContent = () => {
     parameters = {},
     responseSchema = null,
     tools = [],
-    modelName = 'gemini-2.0-flash-exp',
+    modelName = 'gemini-2.0-flash',
     systemInstruction = '',
   }: {
     contents: any[]

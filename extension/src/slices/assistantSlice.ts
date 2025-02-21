@@ -21,22 +21,11 @@ export interface Settings {
   [key: string]: Setting
 }
 
-export interface ExploreSamples {
-  [exploreKey: string]: Sample[]
-}
-
-export interface ExploreExamples {
-  [exploreKey: string]: {
-    input: string
-    output: string
-  }[]
-}
-
-export interface RefinementExamples {
-  [exploreKey: string]: {
-    input: string[]
-    output: string
-  }[]
+export interface ExploreDefinition {
+  exploreKey: string
+  modelName: string
+  exploreId: string
+  samples: string[]
 }
 
 interface Field {
@@ -44,11 +33,6 @@ interface Field {
   type: string
   description: string
   tags: string[]
-}
-
-interface Sample {
-  category: string
-  prompt: string
 }
 
 export interface TextMessage {
@@ -99,6 +83,14 @@ export interface SemanticModel {
   modelName: string
 }
 
+export interface User {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  group_ids: string[]
+}
+
 export interface AssistantState {
   isQuerying: boolean
   isChatMode: boolean
@@ -108,6 +100,8 @@ export interface AssistantState {
     modelName: string
     exploreId: string
   }
+  user: User | null
+  exploreAssistantConfig: ExploreAssistantConfig | null
   sidePanel: {
     isSidePanelOpen: boolean
     exploreParams: ExploreParams
@@ -117,13 +111,9 @@ export interface AssistantState {
     [exploreKey: string]: SemanticModel
   }
   query: string
-  examples: {
-    exploreGenerationExamples: ExploreExamples
-    exploreRefinementExamples: RefinementExamples
-    exploreSamples: ExploreSamples
-  },
+  explores: ExploreDefinition[],
   settings: Settings,
-  isBigQueryMetadataLoaded: boolean,
+  isMetadataLoaded: boolean,
   isSemanticModelLoaded: boolean
 }
 
@@ -142,6 +132,13 @@ export const newThreadState = () => {
   return thread
 }
 
+export interface ExploreAssistantConfig {
+  sample_prompts?: Record<string, string[]>
+  explore_whitelist?: string[]
+  explore_blacklist?: string[]
+  allowed_looker_group_ids?: string[]
+}
+
 export const initialState: AssistantState = {
   isQuerying: false,
   isChatMode: false,
@@ -151,6 +148,8 @@ export const initialState: AssistantState = {
     modelName: '',
     exploreId: ''
   },
+  user: null,
+  exploreAssistantConfig: null,
   sidePanel: {
     isSidePanelOpen: false,
     exploreParams: {},
@@ -158,11 +157,7 @@ export const initialState: AssistantState = {
   history: [],
   query: '',
   semanticModels: {},
-  examples: {
-    exploreGenerationExamples: {},
-    exploreRefinementExamples: {},
-    exploreSamples: {}
-  },
+  explores: [],
   settings: {
     show_explore_data: {
       name: 'Show Explore Data',
@@ -170,7 +165,7 @@ export const initialState: AssistantState = {
       value: false,
     },
   },
-  isBigQueryMetadataLoaded: false,
+  isMetadataLoaded: false,
   isSemanticModelLoaded: false
 }
 
@@ -214,6 +209,12 @@ export const assistantSlice = createSlice({
     },
     clearHistory : (state) => {
       state.history = []
+    },
+    setExploreAssistantConfig: (state, action: PayloadAction<ExploreAssistantConfig>) => {
+      state.exploreAssistantConfig = action.payload
+    },
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload
     },
     updateLastHistoryEntry: (state) => {
       if (state.currentExploreThread === null) {
@@ -276,29 +277,17 @@ export const assistantSlice = createSlice({
       }
       state.currentExploreThread.messages.push(action.payload)
     },
-    setExploreGenerationExamples(
+    setExplores(
       state,
-      action: PayloadAction<AssistantState['examples']['exploreGenerationExamples']>,
+      action: PayloadAction<ExploreDefinition[]>,
     ) {
-      state.examples.exploreGenerationExamples = action.payload
+      state.explores = action.payload
     },
-    setExploreRefinementExamples(
-      state,
-      action: PayloadAction<AssistantState['examples']['exploreRefinementExamples']>,
-    ) {
-      state.examples.exploreRefinementExamples = action.payload
-    },
-    setExploreSamples(
-      state,
-      action: PayloadAction<ExploreSamples>,
-    ) {
-      state.examples.exploreSamples = action.payload
-    },
-    setisBigQueryMetadataLoaded: (
+    setIsMetadataLoaded: (
       state, 
       action: PayloadAction<boolean>
     ) => {
-      state.isBigQueryMetadataLoaded = action.payload
+      state.isMetadataLoaded = action.payload
     },
     setIsSemanticModelLoaded: (state, action: PayloadAction<boolean>) => {
       state.isSemanticModelLoaded = action.payload
@@ -335,11 +324,7 @@ export const {
   setQuery,
   resetChat,
   addMessage,
-  setExploreGenerationExamples,
-  setExploreRefinementExamples,
-  setExploreSamples,
-
-  setisBigQueryMetadataLoaded,
+  setExplores,
 
   updateCurrentThread,
   setCurrentThread,
@@ -348,6 +333,8 @@ export const {
   closeSidePanel,
   setSidePanelExploreParams,
 
+  setIsMetadataLoaded,
+
   setSetting,
   resetSettings,
 
@@ -355,6 +342,8 @@ export const {
   setCurrenExplore,
 
   resetExploreAssistant,
+  setExploreAssistantConfig,
+  setUser,
 } = assistantSlice.actions
 
 export default assistantSlice.reducer

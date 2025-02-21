@@ -27,11 +27,6 @@ import MessageThread from './MessageThread'
 import clsx from 'clsx'
 import CloseIcon from '@mui/icons-material/Close'
 import {
-  FormControl,
-  InputLabel,
-  LinearProgress,
-  MenuItem,
-  Select,
   SelectChangeEvent,
   Tooltip,
 } from '@mui/material'
@@ -41,6 +36,9 @@ import { formatRow } from '../../hooks/useGenerateContent'
 import { ExploreHelper } from '../../utils/ExploreHelper'
 import { ExtensionContext } from '@looker/extension-sdk-react'
 import { Loading } from '../../components/Loading'
+import ExplorePicker from '../../components/ExplorePicker'
+import { NotAuthorized } from '../../components/NotAuthorized'
+import { ExternalLink } from 'lucide-react'
 
 const exploreRequestBodySchema = {
   fields: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to include in the explore' },
@@ -121,20 +119,13 @@ const AgentPage = () => {
     currentExploreThread,
     currentExplore,
     sidePanel,
-    examples,
+    explores,
     semanticModels,
-    isBigQueryMetadataLoaded,
+    isMetadataLoaded,
     isSemanticModelLoaded,
+    user,
+    exploreAssistantConfig,
   } = useSelector((state: RootState) => state.assistant as AssistantState)
-
-  const explores = Object.keys(examples.exploreSamples).map((key) => {
-    const exploreParts = key.split(':')
-    return {
-      exploreKey: key,
-      modelName: exploreParts[0],
-      exploreId: exploreParts[1],
-    }
-  })
 
   const scrollIntoView = useCallback(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -348,7 +339,6 @@ const AgentPage = () => {
             exploreId: currentExplore.exploreId,
             dimensions,
             measures,
-            examples: examples.exploreGenerationExamples,
           })
 
           const functionResponseMessage: FunctionResponse = {
@@ -386,6 +376,7 @@ const AgentPage = () => {
             const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
             summary = await summarizeData(data)
           } catch (error) {
+            console.error('Error fetching data', error)
             summary = 'There was an error fetching the data, likely the request body was invalid'
           }
 
@@ -434,9 +425,9 @@ const AgentPage = () => {
   
     // update the history with the current contents of the thread
     dispatch(updateLastHistoryEntry())
-  }, [query, semanticModels, examples, currentExplore, currentExploreThread])
+  }, [query, semanticModels, currentExplore, currentExploreThread])
   
-  const isDataLoaded = isBigQueryMetadataLoaded && isSemanticModelLoaded
+  const isDataLoaded = isMetadataLoaded && isSemanticModelLoaded
 
   useEffect(() => {
     if (!query || query === '' || !isDataLoaded) {
@@ -463,10 +454,19 @@ const AgentPage = () => {
     )
   }
 
-  const isAgentReady = isBigQueryMetadataLoaded && isSemanticModelLoaded
+  const isAgentReady = isMetadataLoaded && isSemanticModelLoaded
 
   if (!isAgentReady) {
     return <Loading />
+  }
+
+  let isUserAllowed = true
+  if (user && exploreAssistantConfig?.allowed_looker_group_ids) {
+    isUserAllowed = user?.group_ids.some((group) => exploreAssistantConfig?.allowed_looker_group_ids?.includes(group))
+  }
+
+  if (!isUserAllowed) {
+    return <NotAuthorized />
   }
 
   return (
@@ -593,25 +593,37 @@ const AgentPage = () => {
                 <h1 className="text-5xl text-gray-400">How can I help you today?</h1>
               </div>
 
-              <div className="flex flex-col max-w-3xl m-auto mt-16">
+              <div className="flex flex-col max-w-3xl m-auto mt-12">
                 {explores.length > 1 && (
-                  <div className="text-md border-b-2 p-2 max-w-3xl">
-                    <FormControl className="">
-                      <InputLabel>Explore</InputLabel>
-                      <Select
-                        value={currentExplore.exploreKey}
-                        label="Explore"
-                        onChange={handleExploreChange}
-                      >
-                        {explores.map((oneExplore) => (
-                          <MenuItem key={oneExplore.exploreKey} value={oneExplore.exploreKey}>
-                            {toCamelCase(oneExplore.exploreId)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                  <div className="text-md p-2 max-w-3xl mb-8">
+                    <ExplorePicker
+                      explores={explores}
+                      currentExploreKey={currentExplore.exploreKey}
+                      onChange={handleExploreChange}
+                    />
                   </div>
                 )}
+                <div className="flex flex-col max-w-3xl px-4 py-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-grow">
+                      <div className="mb-1 text-2xl font-semibold text-gray-800">
+                        {toCamelCase(currentExplore.modelName)}
+                      </div>
+                      <div className="text-base text-gray-600 font-medium">
+                        {toCamelCase(currentExplore.exploreId)}
+                      </div>
+                    </div>
+                    <a
+                      href={`https://${hostName}/explore/${currentExplore.modelName}/${currentExplore.exploreId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Visit Explore
+                      <ExternalLink className="w-4 h-4 ml-2 -mr-1" />
+                    </a>
+                  </div>
+                </div>
                 <SamplePrompts />
               </div>
 
