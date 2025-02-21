@@ -1,24 +1,15 @@
 # Copy this file to explore_config.yaml and customize the prompts
 sample_prompts:
   "thelook:order_items":
-    - input: "Show me total sales by category over the last 12 months"
-      output: "This visualization shows sales trends broken down by product category for the past year"
-    - input: "What are our top 10 performing products by revenue?"
-      output: "Here are the top 10 products ranked by total revenue"
-    
+    - Show me total sales by category over the last 12 months
+    - What are our top 10 performing products by revenue?
   "thelook:users":
-    - input: "Show me user registration trends by state"
-      output: "This map shows user registration density across different states"
-    - input: "What's the distribution of users by age group?"
-      output: "This chart breaks down our user base by age segments"
-    
+    - Show me user registration trends by state
+    - What's the distribution of users by age group? 
   "thelook:inventory_items":
-    - input: "What's our current inventory level by brand?"
-      output: "This visualization shows inventory levels across different brands"
-    - input: "Show me products with low stock levels"
-      output: "Here are products that need restocking, filtered by low inventory threshold"
-    - input: "Which categories have the highest cost of goods sold?"
-      ou
+    - What's our current inventory level by brand?
+    - Show me products with low stock levels
+    - Which categories have the highest cost of goods sold?
 explore_whitelist:
   - thelook:order_items
 explore_blacklist:
