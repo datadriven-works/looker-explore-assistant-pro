@@ -26,10 +26,7 @@ import {
 import MessageThread from './MessageThread'
 import clsx from 'clsx'
 import CloseIcon from '@mui/icons-material/Close'
-import {
-  SelectChangeEvent,
-  Tooltip,
-} from '@mui/material'
+import { SelectChangeEvent, Tooltip } from '@mui/material'
 import { getRelativeTimeString } from '../../utils/time'
 import { useGenerateContent } from '../../hooks/useGenerateContent'
 import { formatRow } from '../../hooks/useGenerateContent'
@@ -39,15 +36,41 @@ import { Loading } from '../../components/Loading'
 import ExplorePicker from '../../components/ExplorePicker'
 import { NotAuthorized } from '../../components/NotAuthorized'
 import { ExternalLink } from 'lucide-react'
+import { DashboardMetadata } from '../../types'
+import { fetchDashboardDetails } from '../../utils/fetchDashboardDetails'
+import { fetchQueryData } from '../../utils/fetchQueryData'
 
 const exploreRequestBodySchema = {
-  fields: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to include in the explore' },
-  filters: { type: 'OBJECT', description: 'The filters to apply to the explore. The keys are the dimensions and measures defined in the semantic model.' },
-  filter_expression: { type: 'STRING', description: 'A filter expression to apply to the explore. This is a SQL-like expression that will be used to filter the data in the explore.' },
-  sorts: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The sorts to apply to the explore' },
+  fields: {
+    type: 'ARRAY',
+    items: { type: 'STRING' },
+    description: 'The fields to include in the explore',
+  },
+  filters: {
+    type: 'OBJECT',
+    description:
+      'The filters to apply to the explore. The keys are the dimensions and measures defined in the semantic model.',
+  },
+  filter_expression: {
+    type: 'STRING',
+    description:
+      'A filter expression to apply to the explore. This is a SQL-like expression that will be used to filter the data in the explore.',
+  },
+  sorts: {
+    type: 'ARRAY',
+    items: { type: 'STRING' },
+    description: 'The sorts to apply to the explore',
+  },
   limit: { type: 'INTEGER', description: 'The limit to apply to the explore' },
-  vis_config: { type: 'OBJECT', description: 'The visualization configuration to apply to the explore' },
-  pivots: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The fields to pivot by. They must also be in the fields array.' },
+  vis_config: {
+    type: 'OBJECT',
+    description: 'The visualization configuration to apply to the explore',
+  },
+  pivots: {
+    type: 'ARRAY',
+    items: { type: 'STRING' },
+    description: 'The fields to pivot by. They must also be in the fields array.',
+  },
   model: { type: 'STRING', description: 'The model to use for the explore' },
   view: { type: 'STRING', description: 'The view to use for the explore' },
 }
@@ -108,9 +131,96 @@ const AgentPage = () => {
   const dispatch = useDispatch()
   const [expanded, setExpanded] = useState(false)
   const { generateContent, generateExploreQuery, summarizeData } = useGenerateContent()
-  const { extensionSDK, core40SDK } = useContext(ExtensionContext)
+  const { extensionSDK, core40SDK, tileHostData } = useContext(ExtensionContext)
   const hostUrl = extensionSDK.lookerHostData?.hostUrl
   const hostName = hostUrl ? new URL(hostUrl).hostname : ''
+
+  const [dashboardMetadata, setDashboardMetadata] = useState<DashboardMetadata>({
+    dashboardFilters: {},
+    dashboardId: '',
+    queries: [],
+    description: '',
+  })
+  const [loadingDashboardMetadata, setLoadingDashboardMetadata] = useState<boolean>(false)
+  const [queryResults, setQueryResults] = useState<any[]>([])
+  const { dashboardFilters, dashboardId } = tileHostData
+
+  useEffect(() => {
+    if (queryResults.length > 0) {
+      console.log('📊 QUERY RESULTS UPDATED:', queryResults)
+    }
+  }, [queryResults])
+
+  useEffect(() => {
+    if (dashboardMetadata.queries.length <= 0) return
+    const fetchQueryResults = async () => {
+      if (dashboardMetadata.queries.length > 0) {
+        const results = await fetchQueryData(dashboardMetadata.queries, core40SDK)
+        setQueryResults(results)
+      }
+    }
+
+    fetchQueryResults()
+  }, [dashboardMetadata.queries, core40SDK])
+
+  const fetchQueryMetadata = useCallback(async () => {
+    if (dashboardId && dashboardId !== 'undefined') {
+      setLoadingDashboardMetadata(true)
+      const { description, queries } = await fetchDashboardDetails(
+        dashboardId,
+        core40SDK,
+        extensionSDK,
+        dashboardFilters || {}
+      )
+      if (!loadingDashboardMetadata) {
+        await extensionSDK.localStorageSetItem(
+          `${dashboardId}:${JSON.stringify(dashboardFilters)}`,
+          JSON.stringify({ dashboardFilters, dashboardId, queries, description })
+        )
+        setDashboardMetadata({ dashboardFilters, dashboardId, queries, description })
+      }
+    }
+  }, [dashboardId, dashboardFilters])
+
+  useEffect(() => {
+    fetchQueryMetadata()
+  }, [fetchQueryMetadata])
+
+  const fetchAvailableModelsAndExplores = async () => {
+    try {
+      const modelsResponse = await core40SDK.all_lookml_models({})
+      console.log('📥 USER:', user)
+      if (!modelsResponse.ok) {
+        console.error('❌ Error fetching models:', modelsResponse.error)
+        return []
+      }
+
+      const models = modelsResponse.value
+      console.log('📥 RECEIVED MODELS:', models)
+
+      const availableExplores: any[] = []
+
+      models.forEach((model) => {
+        if (model.explores && model.explores.length > 0) {
+          const modelExplores = model.explores.map((explore: any) => ({
+            modelName: model.name,
+            exploreName: explore.name,
+            exploreLabel: explore.label,
+            exploreDescription: explore.description,
+            exploreKey: `${model.name}:${explore.name}`,
+          }))
+
+          availableExplores.push(...modelExplores)
+        }
+      })
+
+      console.log('📊 AVAILABLE EXPLORES:', availableExplores)
+      return availableExplores
+    } catch (error) {
+      console.error('❌ Error fetching models and explores:', error)
+      return []
+    }
+  }
 
   const {
     isChatMode,
@@ -132,17 +242,22 @@ const AgentPage = () => {
   }, [endOfMessagesRef])
 
   useEffect(() => {
+    if (core40SDK && user) {
+      fetchAvailableModelsAndExplores()
+    }
+  }, [core40SDK, user])
+
+  useEffect(() => {
     scrollIntoView()
   }, [currentExploreThread, query, isQuerying])
-
 
   const submitMessage = useCallback(async () => {
     if (query === '') {
       return
     }
-  
+
     dispatch(setIsQuerying(true))
-  
+
     const exploreKey = currentExploreThread?.exploreKey || currentExplore.exploreKey
     const { dimensions, measures } = semanticModels[exploreKey]
 
@@ -155,10 +270,15 @@ const AgentPage = () => {
           exploreKey: currentExplore.exploreKey,
         })
       )
+      console.log('📤 UPDATE CURRENT THREAD:', {
+        exploreId: currentExplore.exploreId,
+        modelName: currentExplore.modelName,
+        exploreKey: currentExplore.exploreKey,
+      })
     }
-  
+
     const contentList: ChatMessage[] = [...(currentExploreThread?.messages || [])]
-  
+
     const initialMessage: TextMessage = {
       uuid: uuidv4(),
       message: query,
@@ -166,10 +286,10 @@ const AgentPage = () => {
       createdAt: Date.now(),
       type: 'text',
     }
-  
+
     dispatch(addMessage(initialMessage))
     contentList.push(initialMessage)
-  
+
     const tools = [
       {
         name: 'get_time',
@@ -187,7 +307,8 @@ const AgentPage = () => {
       },
       {
         name: 'get_explore_query',
-        description: 'Generate the request body to a Looker explore that answers the user question. The request body will be compatible with the Looker API endpoints for run_inline_query. It will use the dimensions/measures defined in the semantic model to create the explore. This will also trigger the embedding of the explore in the UI for the user to view. Use this function to either generate the explore query body, or to show the user a visualization of the explore in the UI.',
+        description:
+          'Generate the request body to a Looker explore that answers the user question. The request body will be compatible with the Looker API endpoints for run_inline_query. It will use the dimensions/measures defined in the semantic model to create the explore. This will also trigger the embedding of the explore in the UI for the user to view. Use this function to either generate the explore query body, or to show the user a visualization of the explore in the UI.',
         parameters: {
           type: 'OBJECT',
           properties: {
@@ -201,14 +322,15 @@ const AgentPage = () => {
       },
       {
         name: 'get_explore_link',
-        description: 'Generate the URL for a Looker explore based on a valid request body that is compatible with the Looker API endpoints for run_inline_query. This will return a full qualified URL that can be used to view the explore in Looker. Only provide a request body that was generated by the get_explore_query tool.',
+        description:
+          'Generate the URL for a Looker explore based on a valid request body that is compatible with the Looker API endpoints for run_inline_query. This will return a full qualified URL that can be used to view the explore in Looker. Only provide a request body that was generated by the get_explore_query tool.',
         parameters: {
           type: 'OBJECT',
           properties: {
             request_body: {
               type: 'OBJECT',
               description: 'The request body to generate a URL for',
-              properties: exploreRequestBodySchema
+              properties: exploreRequestBodySchema,
             },
           },
           required: ['request_body'],
@@ -216,22 +338,24 @@ const AgentPage = () => {
       },
       {
         name: 'get_data_analysis',
-        description: 'Generate a summary of the data in the explore. We will fetch the data from the explore, and create a summary in markdown format. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
+        description:
+          'Generate a summary of the data in the explore. We will fetch the data from the explore, and create a summary in markdown format. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
         parameters: {
           type: 'OBJECT',
           properties: {
             request_body: {
               type: 'OBJECT',
               description: 'The request body to generate a summary for',
-              properties: exploreRequestBodySchema
+              properties: exploreRequestBodySchema,
             },
           },
           required: ['request_body'],
         },
       },
-      { 
+      {
         name: 'get_data_sample',
-        description: 'Generate a sample of the data in the explore. We will fetch the data from the explore, and create a sample. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
+        description:
+          'Generate a sample of the data in the explore. We will fetch the data from the explore, and create a sample. You must supply a valid request body that is compatible with the Looker API endpoints for run_inline_query.',
         parameters: {
           type: 'OBJECT',
           properties: {
@@ -241,9 +365,9 @@ const AgentPage = () => {
             },
           },
         },
-      }
-    ]  
-    
+      },
+    ]
+
     const systemInstruction = `You are a helpful assistant that is inside of Looker. Your job is to help me answer questions about this data set ${currentExploreThread?.exploreKey}. The model is ${currentExplore.modelName} and the explore is ${currentExplore.exploreId}. If you make links to an explore, they should look like https://${hostName}/explore/${currentExplore.modelName}/${currentExplore.exploreId}. If you're generating a link to an explore, prefer to use the get_explore_link tool instead of trying to generate it yourself. Try not to make the text of the link the full URL, but try to describe the explore in a way that is easy to understand.
 
     If you're asked to generate a summary or analysis, use the get_data_analysis tool. Return the analysis in markdown format that was provided to you by the get_data_analysis tool. Don't include the JSON, just the markdown text.
@@ -257,19 +381,25 @@ const AgentPage = () => {
 
     Return text in markdown format. When showing links, use the markdown link format.
     `
-  
+
+    console.log('📤 SYSTEM INSTRUCTION:', systemInstruction)
+    console.log('📤 AVAILABLE TOOLS:', tools)
+
     // We'll do up to 10 rounds of evaluation in case there are multiple function calls
     const maxRounds = 3
     let round = 0
-  
+
     while (round < maxRounds) {
       // Generate a response from the current conversation state
+      const history = generateHistory(contentList)
+      console.log('📤 SENDING HISTORY:', history)
+
       const response = await generateContent({
-        contents: generateHistory(contentList),
+        contents: history,
         tools,
         systemInstruction,
       })
-  
+
       // Process any textual responses
       let responseText = ''
       response.forEach((oneResponse: any) => {
@@ -277,7 +407,7 @@ const AgentPage = () => {
           responseText += oneResponse.text
         }
       })
-  
+
       if (responseText && responseText.trim() !== '') {
         const textMessage: TextMessage = {
           uuid: uuidv4(),
@@ -289,22 +419,24 @@ const AgentPage = () => {
         dispatch(addMessage(textMessage))
         contentList.push(textMessage)
       }
-  
+
       // Find function calls in the response
       const functionCalls = response.filter(
         (oneResponse: any) => oneResponse.functionCall !== undefined
       )
-  
+
       if (functionCalls.length === 0) {
         // No function calls, we can break out of the loop
         break
       }
-  
+
       // Handle all function calls
       for (const oneFunctionCall of functionCalls) {
         const functionName = oneFunctionCall.functionCall.name
         const functionArguments = oneFunctionCall.functionCall.args
-  
+
+        console.log(`📤 FUNCTION CALL - ${functionName}:`, functionArguments)
+
         const functionCallMessage: FunctionCall = {
           uuid: uuidv4(),
           name: functionName,
@@ -314,12 +446,11 @@ const AgentPage = () => {
         }
         dispatch(addMessage(functionCallMessage))
         contentList.push(functionCallMessage)
-  
+
         // Handle known tools here:
         if (functionName === 'get_time') {
           const timeZone =
-            functionArguments?.time_zone ||
-            window.Intl.DateTimeFormat().resolvedOptions().timeZone
+            functionArguments?.time_zone || window.Intl.DateTimeFormat().resolvedOptions().timeZone
           const time = new Date().toLocaleString('en-US', { timeZone })
           const functionResponseMessage: FunctionResponse = {
             uuid: uuidv4(),
@@ -332,7 +463,6 @@ const AgentPage = () => {
           dispatch(addMessage(functionResponseMessage))
           contentList.push(functionResponseMessage)
         } else if (functionName === 'get_explore_query') {
-
           const response = await generateExploreQuery({
             userRequest: functionArguments.user_request,
             modelName: currentExplore.modelName,
@@ -340,6 +470,8 @@ const AgentPage = () => {
             dimensions,
             measures,
           })
+
+          console.log('📥 EXPLORE QUERY RESPONSE:', response)
 
           const functionResponseMessage: FunctionResponse = {
             uuid: uuidv4(),
@@ -352,7 +484,6 @@ const AgentPage = () => {
           dispatch(addMessage(functionResponseMessage))
           contentList.push(functionResponseMessage)
         } else if (functionName === 'get_explore_link') {
-
           const params = ExploreHelper.encodeExploreParams(functionArguments.request_body)
           params.toggle = 'vis,data'
           const paramString = new URLSearchParams(params).toString()
@@ -370,8 +501,8 @@ const AgentPage = () => {
           dispatch(addMessage(functionResponseMessage))
           contentList.push(functionResponseMessage)
         } else if (functionName === 'get_data_analysis') {
-         // get all the data and create a summary
-         let summary = ''
+          // get all the data and create a summary
+          let summary = ''
           try {
             const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
             summary = await summarizeData(data)
@@ -392,9 +523,7 @@ const AgentPage = () => {
 
           dispatch(addMessage(functionResponseMessage))
           contentList.push(functionResponseMessage)
-
         } else if (functionName === 'get_data_sample') {
-
           const data = await ExploreHelper.getData(functionArguments.request_body, core40SDK)
 
           // run the query and respond with the data
@@ -416,17 +545,17 @@ const AgentPage = () => {
       // After handling function calls, loop again to let the model react to the function responses
       round++
     }
-  
+
     dispatch(setIsQuerying(false))
     dispatch(setQuery(''))
-  
+
     // scroll to bottom of message thread
     scrollIntoView()
-  
+
     // update the history with the current contents of the thread
     dispatch(updateLastHistoryEntry())
   }, [query, semanticModels, currentExplore, currentExploreThread])
-  
+
   const isDataLoaded = isMetadataLoaded && isSemanticModelLoaded
 
   useEffect(() => {
@@ -462,7 +591,9 @@ const AgentPage = () => {
 
   let isUserAllowed = true
   if (user && exploreAssistantConfig?.allowed_looker_group_ids) {
-    isUserAllowed = user?.group_ids.some((group) => exploreAssistantConfig?.allowed_looker_group_ids?.includes(group))
+    isUserAllowed = user?.group_ids.some((group) =>
+      exploreAssistantConfig?.allowed_looker_group_ids?.includes(group)
+    )
   }
 
   if (!isUserAllowed) {
