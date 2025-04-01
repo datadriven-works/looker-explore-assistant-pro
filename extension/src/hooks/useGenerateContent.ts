@@ -148,9 +148,6 @@ export const useGenerateContent = () => {
               ],
             },
           },
-          additionalProperties: {
-            type: 'STRING',
-          },
           required: ['type'],
         },
         fields: { type: 'ARRAY', items: { type: 'STRING' }, default: [] },
@@ -242,6 +239,7 @@ export const useGenerateContent = () => {
       headers: {
         'Content-Type': 'application/json',
         'X-Signature': signature,
+        'Authorization': `Bearer ${VERTEX_CF_AUTH_TOKEN}`, 
       },
 
       body: jsonBody,
