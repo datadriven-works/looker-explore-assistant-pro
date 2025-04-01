@@ -148,9 +148,6 @@ export const useGenerateContent = () => {
               ],
             },
           },
-          additionalProperties: {
-            type: 'STRING',
-          },
           required: ['type'],
         },
         fields: { type: 'ARRAY', items: { type: 'STRING' }, default: [] },
